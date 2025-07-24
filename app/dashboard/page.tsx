@@ -113,7 +113,7 @@ export default async function DashboardPage() {
   const { activeEntry, todayEntries, isClockedIn, recentRecords } = await getDashboardData(userId, orgId);
   
   // Calculate stats server-side
-  const stats = calculateStats(todayEntries, activeEntry, isClockedIn, recentRecords);
+  const stats = calculateStats(todayEntries, activeEntry as TimeEntryWithDuration, isClockedIn, recentRecords);
 
   return (
     <div className="space-y-6">
@@ -129,7 +129,7 @@ export default async function DashboardPage() {
       <StatsCards stats={stats} />
 
       <DashboardClient
-        initialActiveEntry={activeEntry}
+        initialActiveEntry={activeEntry as TimeEntryWithDuration}
         initialTodayEntries={todayEntries}
         initialIsClockedIn={isClockedIn}
       />

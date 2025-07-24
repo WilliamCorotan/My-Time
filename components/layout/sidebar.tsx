@@ -7,7 +7,6 @@ import { useOrganization } from '@/lib/hooks/use-organization';
 import { 
   Clock, 
   BarChart3, 
-  Settings, 
   Users, 
   Home,
   Menu,
@@ -20,6 +19,8 @@ import { cn } from '@/lib/utils';
 import { OrganizationSelector } from './organization-selector';
 import { getClientUserDisplayName, getClientUserEmail } from '@/lib/user-utils';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
+import { User } from '@clerk/nextjs/server';
+import { Organization } from '@clerk/nextjs/server';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -59,8 +60,8 @@ export function Sidebar() {
         <SidebarContent 
           navigation={filteredNavigation}
           pathname={pathname}
-          user={user}
-          organization={organization}
+          user={user as User | null}
+          organization={organization as Organization | null}
           onClose={() => setSidebarOpen(false)}
         />
       </div>
@@ -71,8 +72,8 @@ export function Sidebar() {
           <SidebarContent 
             navigation={filteredNavigation}
             pathname={pathname}
-            user={user}
-            organization={organization}
+            user={user as User | null}
+            organization={organization as Organization | null}
           />
         </div>
       </div>
@@ -100,8 +101,8 @@ function SidebarContent({ navigation, pathname, user, organization, onClose }: {
     adminOnly?: boolean;
   }>;
   pathname: string;
-  user: any;
-  organization: any;
+  user: User | null;
+  organization: Organization | null;
   onClose?: () => void;
 }) {
   return (

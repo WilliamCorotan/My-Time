@@ -67,7 +67,7 @@ export default function ThemesPage() {
               <Badge variant="secondary">{theme}</Badge>
             </CardTitle>
             <CardDescription>
-              You're currently using the {themeNames[theme].toLowerCase()} theme
+              You&apos;re currently using the {themeNames[theme].toLowerCase()} theme
             </CardDescription>
           </CardHeader>
         </Card>

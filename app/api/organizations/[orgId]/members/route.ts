@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { auth, clerkClient, User } from '@clerk/nextjs/server';
 import { 
   getOrganizationMembers,
   isUserAdmin
 } from '@/lib/organizations';
 import { getUserDisplayName, getUserEmail, getUserImageUrl } from '@/lib/user-utils';
 
+type Params = Promise<{ orgId: string }>;
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Params }
 ) {
   const { userId } = await auth();
   if (!userId) {
@@ -16,7 +18,7 @@ export async function GET(
   }
 
   try {
-    const orgId = params.orgId;
+    const { orgId } = await params;
     const isAdmin = await isUserAdmin(userId, orgId);
     
     if (!isAdmin) {
@@ -31,14 +33,14 @@ export async function GET(
     const users = await clerk.users.getUserList({ userId: userIds });
     
     const membersWithDetails = members.map(member => {
-      const user = users.data.find((u: any) => u.id === member.userId);
+      const user = users.data.find((u: User) => u.id === member.userId);
       return {
         userId: member.userId,
         role: member.role,
         joinedAt: member.joinedAt,
-        email: getUserEmail(user as any),
-        name: getUserDisplayName(user as any) || 'Unknown User',
-        imageUrl: getUserImageUrl(user as any),
+        email: getUserEmail(user as User),
+        name: getUserDisplayName(user as User) || 'Unknown User',
+        imageUrl: getUserImageUrl(user as User),
       };
     });
 

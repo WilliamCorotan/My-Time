@@ -3,9 +3,11 @@ import { auth } from '@clerk/nextjs/server';
 import { getInvitation, acceptInvitation, expireInvitation } from '@/lib/invitations';
 import { addUserToOrganization } from '@/lib/organizations';
 
+type Params = Promise<{ invitationId: string }>;
+
 export async function POST(
-  req: NextRequest,
-  { params }: { params: { invitationId: string } }
+  _req: NextRequest,
+  { params }: { params: Params }
 ) {
   const { userId } = await auth();
   if (!userId) {
@@ -13,7 +15,7 @@ export async function POST(
   }
 
   try {
-    const invitationId = params.invitationId;
+    const { invitationId } = await params;
 
     // Get invitation
     const invitation = await getInvitation(invitationId);

@@ -1,7 +1,7 @@
 "use client";
 import { RealtimeTimeClock } from '@/components/dashboard/realtime-time-clock';
 import { RealtimeTodayEntries } from '@/components/dashboard/realtime-today-entries';
-import type { TimeEntryWithDuration } from '@/lib/time-entries';
+import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
 type DashboardClientProps = {
   initialActiveEntry: TimeEntryWithDuration | null;

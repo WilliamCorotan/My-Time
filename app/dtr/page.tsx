@@ -7,8 +7,9 @@ import {
   getActiveTimeEntry, 
   getTodayTimeEntries, 
   isUserClockedIn,
-  type TimeEntryWithDuration 
 } from '@/lib/time-entries';
+
+import type { TimeEntryWithDuration} from '@/lib/time-entries-types'
 
 async function getDTRData(userId: string, orgId: string) {
   const [activeEntry, todayEntries, isClockedIn] = await Promise.all([

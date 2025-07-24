@@ -139,7 +139,6 @@ export function DTRContent({
         </CardContent>
       </Card>
 
-      {console.log('aa', todayEntries)}
       {todayEntries.length > 0 && (
         <Card>
           <CardHeader>

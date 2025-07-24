@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, Calendar, BarChart3, Zap } from 'lucide-react';
 import { useTimeTrackingContext } from '@/lib/contexts/time-tracking-context';
 import { formatDuration, calculateTotalDuration } from '@/lib/time-entries-format';
+import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
 type LiveStatsCardsProps = {
-  recentRecords: any[]; // Recent records for week/month calculations
+  recentRecords: TimeEntryWithDuration[]; // Recent records for week/month calculations
 };
 
 export function LiveStatsCards({ recentRecords }: LiveStatsCardsProps) {

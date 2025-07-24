@@ -45,6 +45,7 @@ export function AdminClient({ records, orgId }: AdminClientProps) {
     const rows: string[][] = [];
     
     Array.from(groupedByUser.entries()).forEach(([userId, dateMap]) => {
+      console.log(userId, dateMap);
       Array.from(dateMap.entries())
         .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
         .forEach(([date, entries]) => {

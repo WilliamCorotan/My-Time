@@ -90,32 +90,32 @@ export default function CalendarPage() {
     });
   };
 
-  const calculateHours = (timeIn?: string, timeOut?: string) => {
-    if (!timeIn || !timeOut) return null;
+  // const calculateHours = (timeIn?: string, timeOut?: string) => {
+  //   if (!timeIn || !timeOut) return null;
     
-    // Handle both time strings (HH:mm:ss) and datetime strings
-    let startTime = timeIn;
-    let endTime = timeOut;
+  //   // Handle both time strings (HH:mm:ss) and datetime strings
+  //   let startTime = timeIn;
+  //   let endTime = timeOut;
     
-    if (!timeIn.includes('T')) {
-      startTime = `2000-01-01T${timeIn}`;
-    }
-    if (!timeOut.includes('T')) {
-      endTime = `2000-01-01T${timeOut}`;
-    }
+  //   if (!timeIn.includes('T')) {
+  //     startTime = `2000-01-01T${timeIn}`;
+  //   }
+  //   if (!timeOut.includes('T')) {
+  //     endTime = `2000-01-01T${timeOut}`;
+  //   }
     
-    const start = new Date(startTime);
-    const end = new Date(endTime);
+  //   const start = new Date(startTime);
+  //   const end = new Date(endTime);
     
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return null;
-    }
+  //   if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+  //     return null;
+  //   }
     
-    const diff = end.getTime() - start.getTime();
-    const hours = diff / (1000 * 60 * 60);
+  //   const diff = end.getTime() - start.getTime();
+  //   const hours = diff / (1000 * 60 * 60);
     
-    return hours.toFixed(1);
-  };
+  //   return hours.toFixed(1);
+  // };
 
   const getStatusColor = (record?: CalendarRecord) => {
     if (!record?.timeIn) return 'bg-muted text-muted-foreground';

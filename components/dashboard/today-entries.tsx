@@ -43,7 +43,7 @@ export function TodayEntries({ entries }: TodayEntriesProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Today's Sessions
+            Today&apos;s Sessions
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -62,7 +62,7 @@ export function TodayEntries({ entries }: TodayEntriesProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          Today's Sessions ({entries.length})
+          Today&apos;s Sessions ({entries.length})
         </CardTitle>
       </CardHeader>
       <CardContent>

@@ -7,7 +7,7 @@ import { InvitePage } from '@/components/invite/invite-page';
 export default async function InvitePageServer({
   params,
 }: {
-  params: { invitationId: string };
+  params: Promise<{ invitationId: string }>;
 }) {
   const { userId } = await auth();
   
@@ -17,7 +17,8 @@ export default async function InvitePageServer({
   }
 
   try {
-    const invitation = await getInvitation(params.invitationId);
+    const { invitationId } = await params;
+    const invitation = await getInvitation(invitationId);
     
     if (!invitation) {
       return (

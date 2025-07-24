@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth';
-import { currentUser } from '@clerk/nextjs/server';
+import { currentUser, User } from '@clerk/nextjs/server';
 import { getUserOrganizations, getOrganizationMembers, getOrganizationById } from '@/lib/organizations';
 import { getUserDisplayName, getUserEmail, getUserImageUrl } from '@/lib/user-utils';
 import { redirect } from 'next/navigation';
@@ -13,6 +13,11 @@ import { AdminClient } from '@/components/admin/admin-client';
 import { getTimeEntriesForRange } from '@/lib/time-entries';
 import { formatDuration } from '@/lib/time-entries-format';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
+
+// Local type for records with user names
+type TimeEntryWithUserName = TimeEntryWithDuration & {
+  userName: string;
+};
 
 function getPast7DaysDate(): string {
   const date = new Date();
@@ -39,17 +44,17 @@ async function getAdminData(orgId: string) {
   // Fetch user details from Clerk
   const clerk = await clerkClient();
   const users = await clerk.users.getUserList({ userId: userIds });
-  const userMap = new Map(users.data.map((u: any) => [u.id, u]));
+  const userMap = new Map(users.data.map((u: User) => [u.id, u]));
   
   const membersWithDetails = members.map(m => {
     const user = userMap.get(m.userId);
     return {
       userId: m.userId,
-      name: getUserDisplayName(user as any),
-      email: getUserEmail(user as any),
+      name: getUserDisplayName(user as User),
+      email: getUserEmail(user as User),
       role: m.role,
       joinedAt: m.joinedAt,
-      imageUrl: getUserImageUrl(user as any),
+      imageUrl: getUserImageUrl(user as User),
     };
   });
 
@@ -61,9 +66,9 @@ async function getAdminData(orgId: string) {
   }
 
   // Add user names to records
-  const recordsWithNames = allRecords.map(r => ({
+  const recordsWithNames: TimeEntryWithUserName[] = allRecords.map(r => ({
     ...r,
-    userName: userMap.get(r.userId) ? getUserDisplayName(userMap.get(r.userId) as any) : r.userId
+    userName: userMap.get(r.userId) ? getUserDisplayName(userMap.get(r.userId) as User) : r.userId
   }));
 
   return {
@@ -72,7 +77,7 @@ async function getAdminData(orgId: string) {
   };
 }
 
-function calculateStats(records: TimeEntryWithDuration[], members: any[]) {
+function calculateStats(records: TimeEntryWithUserName[], members: { userId: string; role: string; joinedAt: string }[]) {
   const totalHours = records.reduce((acc, r) => {
     return acc + (r.duration || 0);
   }, 0);
@@ -92,7 +97,7 @@ function formatTime(dateTimeString: string) {
 }
 
 // Group records by user and date
-function groupRecordsByUser(records: TimeEntryWithDuration[]) {
+function groupRecordsByUser(records: TimeEntryWithUserName[]) {
   const grouped = new Map<string, Map<string, TimeEntryWithDuration[]>>();
   
   records.forEach(record => {

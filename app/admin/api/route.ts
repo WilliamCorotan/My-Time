@@ -6,6 +6,7 @@ import { getUserDisplayName, getUserEmail, getUserImageUrl } from '@/lib/user-ut
 import { db } from '@/lib/db/config';
 import { timeEntries } from '@/lib/db/schema';
 import { eq, and, gte } from 'drizzle-orm';
+import { User } from '@clerk/nextjs/server';
 
 function getPast7Days() {
   const today = new Date();
@@ -29,16 +30,16 @@ export async function GET(req: NextRequest) {
     const userIds = members.map(m => m.userId);
     const clerk = await clerkClient();
     const users = await clerk.users.getUserList({ userId: userIds });
-    const userMap = new Map(users.data.map((u: any) => [u.id, u]));
+    const userMap = new Map(users.data.map((u: User) => [u.id, u]));
     const membersWithDetails = members.map(m => {
       const user = userMap.get(m.userId);
       return {
         userId: m.userId,
-        name: getUserDisplayName(user as any),
-        email: getUserEmail(user as any),
+        name: getUserDisplayName(user as User),
+        email: getUserEmail(user as User),
         role: m.role,
         joinedAt: m.joinedAt,
-        imageUrl: getUserImageUrl(user as any),
+        imageUrl: getUserImageUrl(user as User),
       };
     });
     return NextResponse.json(membersWithDetails);
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
   // Fetch user info from Clerk
   const clerk = await clerkClient();
   const users = await clerk.users.getUserList({ userId: userIds });
-  const userMap = new Map(users.data.map((u: any) => [u.id, getUserDisplayName(u)]));
+  const userMap = new Map(users.data.map((u: User) => [u.id, getUserDisplayName(u)]));
   // Attach userName to each record and calculate duration
   const recordsWithNames = records.map(r => {
     let duration = 0;

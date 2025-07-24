@@ -8,9 +8,11 @@ import { createInvitation } from '@/lib/invitations';
 import { sendInvitationEmail } from '@/lib/email';
 import { getUserDisplayName } from '@/lib/user-utils';
 
+type Params = Promise<{ orgId: string }>;
+
 export async function POST(
   req: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Params }
 ) {
   const { userId } = await auth();
   if (!userId) {
@@ -18,7 +20,7 @@ export async function POST(
   }
 
   try {
-    const orgId = params.orgId;
+    const { orgId } = await params;
     const body = await req.json();
     const { email } = body;
 

@@ -52,7 +52,7 @@ export function DarkModePreview() {
           Dark Mode Active
         </CardTitle>
         <CardDescription>
-          You're now viewing the improved dark mode theme
+          You&apos;re now viewing the improved dark mode theme
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -145,7 +145,7 @@ export function DarkModePreview() {
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-muted/50 rounded-lg">
                 <div className="text-2xl font-bold text-primary">8.5h</div>
-                <div className="text-sm text-muted-foreground">Today's Hours</div>
+                <div className="text-sm text-muted-foreground">Today&apos;s Hours</div>
               </div>
               <div className="text-center p-4 bg-muted/50 rounded-lg">
                 <div className="text-2xl font-bold text-primary">42.5h</div>

@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { 
   getUserOrganization, 
-  getOrganizationMembers,
   removeUserFromOrganization,
   updateUserRole,
   isUserAdmin
 } from '@/lib/organizations';
 
+type Params = Promise<{ orgId: string }>;
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Params }
 ) {
   const { userId } = await auth();
   if (!userId) {
@@ -18,7 +19,7 @@ export async function GET(
   }
 
   try {
-    const orgId = params.orgId;
+    const { orgId } = await params;
     const organization = await getUserOrganization(userId, orgId);
     
     if (!organization) {
@@ -34,7 +35,7 @@ export async function GET(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Params }
 ) {
   const { userId } = await auth();
   if (!userId) {
@@ -42,7 +43,7 @@ export async function DELETE(
   }
 
   try {
-    const orgId = params.orgId;
+    const { orgId } = await params;
     const body = await req.json();
     const { targetUserId, action } = body;
 
@@ -70,7 +71,7 @@ export async function DELETE(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Params }
 ) {
   const { userId } = await auth();
   if (!userId) {
@@ -78,7 +79,7 @@ export async function PATCH(
   }
 
   try {
-    const orgId = params.orgId;
+    const { orgId } = await params;
     const body = await req.json();
     const { targetUserId, role } = body;
 

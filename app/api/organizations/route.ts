@@ -6,7 +6,7 @@ import {
   addUserToOrganization 
 } from '@/lib/organizations';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

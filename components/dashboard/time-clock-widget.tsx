@@ -139,7 +139,7 @@ export function TimeClockWidget({ activeEntry, todayEntries, isClockedIn, onTime
         </div>
 
         <div className="text-center">
-          <span className="text-muted-foreground">Today's Total:</span>
+          <span className="text-muted-foreground">Today&apos;s Total:</span>
           <div className="text-xl font-bold text-primary">
             {calculateTodayHours()}
           </div>
