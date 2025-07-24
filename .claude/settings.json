@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allowedTools": [
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "Glob",
+      "Grep",
+      "LS",
+      "TodoWrite",
+      "Task",
+      "WebFetch",
+      "WebSearch",
+      "NotebookRead",
+      "NotebookEdit"
+    ]
+  },
+  "env": {
+    "NODE_ENV": "development",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "hooks": {
+    "beforeEdit": "npm run lint --fix",
+    "afterWrite": "npm run typecheck",
+    "beforeCommit": "npm run build"
+  },
+  "model": "claude-3-5-sonnet-20241022",
+  "cleanupPeriodDays": 30
+}
