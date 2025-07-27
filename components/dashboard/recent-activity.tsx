@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { formatTimeOnly } from '@/lib/time-format';
 
 interface RecentActivityProps {
   records: Array<{
@@ -14,13 +15,6 @@ interface RecentActivityProps {
 }
 
 export function RecentActivity({ records }: RecentActivityProps) {
-  const formatTime = (time: string) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
-
   const calculateHours = (timeIn?: string, timeOut?: string) => {
     if (!timeIn || !timeOut) return null;
     
@@ -65,7 +59,7 @@ export function RecentActivity({ records }: RecentActivityProps) {
                   <div className="text-sm text-muted-foreground flex items-center gap-4">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {record.timeIn ? formatTime(record.timeIn) : '-'} - {record.timeOut ? formatTime(record.timeOut) : '-'}
+                      {record.timeIn ? formatTimeOnly(record.timeIn) : '-'} - {record.timeOut ? formatTimeOnly(record.timeOut) : '-'}
                     </span>
                     {calculateHours(record.timeIn, record.timeOut) && (
                       <span className="font-medium text-primary">

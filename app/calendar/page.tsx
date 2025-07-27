@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import { formatTimeOnly } from '@/lib/time-format';
 
 type CalendarRecord = {
   date: string;
@@ -68,194 +69,135 @@ export default function CalendarPage() {
     return records.find(record => record.date === dateStr);
   };
 
-  const formatTime = (time: string) => {
-    // Handle both time strings (HH:mm:ss) and datetime strings
-    let timeToFormat = time;
-    if (time.includes('T')) {
-      // It's already a datetime string
-      timeToFormat = time;
-    } else {
-      // It's a time string, convert to datetime
-      timeToFormat = `2000-01-01T${time}`;
-    }
-    
-    const date = new Date(timeToFormat);
-    if (isNaN(date.getTime())) {
-      return 'Invalid Time';
-    }
-    
-    return date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
-
-  // const calculateHours = (timeIn?: string, timeOut?: string) => {
-  //   if (!timeIn || !timeOut) return null;
-    
-  //   // Handle both time strings (HH:mm:ss) and datetime strings
-  //   let startTime = timeIn;
-  //   let endTime = timeOut;
-    
-  //   if (!timeIn.includes('T')) {
-  //     startTime = `2000-01-01T${timeIn}`;
-  //   }
-  //   if (!timeOut.includes('T')) {
-  //     endTime = `2000-01-01T${timeOut}`;
-  //   }
-    
-  //   const start = new Date(startTime);
-  //   const end = new Date(endTime);
-    
-  //   if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-  //     return null;
-  //   }
-    
-  //   const diff = end.getTime() - start.getTime();
-  //   const hours = diff / (1000 * 60 * 60);
-    
-  //   return hours.toFixed(1);
-  // };
-
   const getStatusColor = (record?: CalendarRecord) => {
-    if (!record?.timeIn) return 'bg-muted text-muted-foreground';
-    if (!record.timeOut) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    return 'bg-green-100 text-green-800 border-green-200';
+    if (!record) return '';
+    if (!record.timeIn) return 'bg-gray-50';
+    if (!record.timeOut) return 'bg-blue-50 border-blue-200';
+    return 'bg-green-50 border-green-200';
   };
 
-  const previousMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentDate(direction === 'prev' ? subMonths(currentDate, 1) : addMonths(currentDate, 1));
+  };
 
-  if (!user) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading calendar...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="text-center py-8">
+          <p className="text-red-600">Error loading calendar: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-2">
-          <Calendar className="h-8 w-8" />
-          Calendar View
-        </h1>
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Calendar View</h1>
         <p className="text-muted-foreground">View your time records in a calendar format.</p>
       </div>
 
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
-
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl">
-              {format(currentDate, 'MMMM yyyy')}
-            </CardTitle>
+          <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={previousMonth}>
+              <Calendar className="h-5 w-5" />
+              {format(currentDate, 'MMMM yyyy')}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateMonth('prev')}
+                className="h-8 w-8 p-0"
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={nextMonth}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateMonth('next')}
+                className="h-8 w-8 p-0"
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-          </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-7 gap-2">
-              {/* Day headers */}
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="p-2 text-center font-semibold text-muted-foreground text-sm">
-                  {day}
-                </div>
-              ))}
+          <div className="grid grid-cols-7 gap-2">
+            {/* Day headers */}
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} className="text-center text-sm font-medium text-muted-foreground p-2">
+                {day}
+              </div>
+            ))}
+            
+            {/* Calendar days */}
+            {calendarDays.map(day => {
+              const isCurrentMonth = isSameMonth(day, currentDate);
+              const isToday = isSameDay(day, new Date());
+              const record = getRecordForDate(day);
               
-              {/* Calendar days */}
-              {calendarDays.map(day => {
-                const record = getRecordForDate(day);
-                const isToday = isSameDay(day, new Date());
-                const isCurrentMonth = isSameMonth(day, currentDate);
-                
-                return (
-                  <div
-                    key={day.toISOString()}
-                    className={`
-                      min-h-[100px] p-2 border border-border rounded-lg transition-colors
-                      ${isCurrentMonth ? 'bg-card' : 'bg-muted/50'}
-                      ${isToday ? 'ring-2 ring-primary' : ''}
-                      ${getStatusColor(record)}
-                    `}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-medium ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}`}>
-                        {format(day, 'd')}
-                      </span>
-                      {record?.duration && (
-                        <Badge variant="success" className="text-xs">
-                          {record.duration}h
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {record && (
-                      <div className="space-y-1 text-xs">
-                        {record.timeIn && (
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{formatTime(record.timeIn)}</span>
-                          </div>
-                        )}
-                        {record.timeOut && (
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{formatTime(record.timeOut)}</span>
-                          </div>
-                        )}
-                        {record.note && (
-                          <div className="text-xs text-muted-foreground truncate" title={record.note}>
-                            {record.note}
-                          </div>
-                        )}
-                      </div>
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={`
+                    min-h-[100px] p-2 border border-border rounded-lg transition-colors
+                    ${isCurrentMonth ? 'bg-card' : 'bg-muted/50'}
+                    ${isToday ? 'ring-2 ring-primary' : ''}
+                    ${getStatusColor(record)}
+                  `}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-sm font-medium ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {format(day, 'd')}
+                    </span>
+                    {record?.duration && (
+                      <Badge variant="success" className="text-xs">
+                        {record.duration}h
+                      </Badge>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  
+                  {record && (
+                    <div className="space-y-1 text-xs">
+                      {record.timeIn && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatTimeOnly(record.timeIn)}</span>
+                        </div>
+                      )}
+                      {record.timeOut && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatTimeOnly(record.timeOut)}</span>
+                        </div>
+                      )}
+                      {record.note && (
+                        <div className="text-xs text-muted-foreground truncate" title={record.note}>
+                          {record.note}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
-              <span className="text-sm text-foreground">Complete Day</span>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-yellow-100 border border-yellow-200 rounded"></div>
-              <span className="text-sm text-foreground">In Progress</span>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-muted border border-border rounded"></div>
-              <span className="text-sm text-foreground">No Record</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

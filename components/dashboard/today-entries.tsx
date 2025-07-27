@@ -1,31 +1,17 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MessageSquare, Play, Square } from 'lucide-react';
+import { Clock, MessageSquare } from 'lucide-react';
 import { formatDuration } from '@/lib/time-entries-format';
-
-type TimeEntry = {
-  id: number;
-  timeIn: string;
-  timeOut?: string | null;
-  note?: string | null;
-  duration?: number;
-  isActive: boolean;
-};
+import { formatTime } from '@/lib/time-format';
+import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
 interface TodayEntriesProps {
-  entries: TimeEntry[];
+  entries: TimeEntryWithDuration[];
 }
 
 export function TodayEntries({ entries }: TodayEntriesProps) {
-  const formatTime = (time: string) => {
-    return new Date(time).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
-
-  const getSessionDuration = (entry: TimeEntry) => {
+  const getSessionDuration = (entry: TimeEntryWithDuration) => {
     if (entry.duration) {
       return formatDuration(entry.duration);
     } else if (entry.isActive) {
@@ -62,43 +48,22 @@ export function TodayEntries({ entries }: TodayEntriesProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          Today&apos;s Sessions ({entries.length})
+          Today&apos;s Sessions
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {entries.map((entry, index) => (
-            <div
-              key={entry.id}
-              className={`p-4 rounded-lg border ${
-                entry.isActive 
-                  ? 'bg-blue-50 border-blue-200' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}
-            >
+            <div key={entry.id} className="p-4 bg-muted/50 rounded-lg border border-border">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-500">
-                    Session {index + 1}
-                  </span>
-                  <Badge variant={entry.isActive ? 'default' : 'secondary'}>
-                    {entry.isActive ? (
-                      <>
-                        <Play className="h-3 w-3 mr-1" />
-                        Active
-                      </>
-                    ) : (
-                      <>
-                        <Square className="h-3 w-3 mr-1" />
-                        Completed
-                      </>
-                    )}
+                  <span className="font-medium text-foreground">Session {index + 1}</span>
+                  <Badge variant={entry.timeOut ? "default" : "secondary"}>
+                    {entry.timeOut ? "Complete" : "In Progress"}
                   </Badge>
                 </div>
-                <div className="text-right">
-                  <div className="font-medium text-blue-600">
-                    {getSessionDuration(entry)}
-                  </div>
+                <div className="font-medium text-primary">
+                  {getSessionDuration(entry)}
                 </div>
               </div>
 

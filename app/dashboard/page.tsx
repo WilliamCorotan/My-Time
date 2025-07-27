@@ -1,28 +1,28 @@
-import { auth } from '@/lib/auth';
 import { currentUser } from '@clerk/nextjs/server';
-import { getUserOrganizations } from '@/lib/organizations';
+import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { StatsCards } from '@/components/dashboard/stats-cards';
 import { DashboardClient } from '@/components/dashboard/dashboard-client';
 import { RecentActivity } from '@/components/dashboard/recent-activity';
+import { getUserOrganizations } from '@/lib/organizations';
 import { getUserDisplayName } from '@/lib/user-utils';
-import { 
-  getActiveTimeEntry, 
-  getTodayTimeEntries, 
-  isUserClockedIn,
-  getTimeEntriesForRange
-} from '@/lib/time-entries';
+import { getTimeEntriesForRange } from '@/lib/time-entries';
 import { calculateTotalDuration, formatDuration } from '@/lib/time-entries-format';
+import { formatTime } from '@/lib/time-format';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
 async function getDashboardData(userId: string, orgId: string) {
-  const [activeEntry, todayEntries, isClockedIn, recentRecords] = await Promise.all([
-    getActiveTimeEntry(userId, orgId),
-    getTodayTimeEntries(userId, orgId),
-    isUserClockedIn(userId, orgId),
-    getTimeEntriesForRange(userId, orgId, getPast7DaysDate(), getTodayDate())
-  ]);
-
+  const today = getTodayDate();
+  const past7Days = getPast7DaysDate();
+  
+  // Get today's entries and recent records
+  const todayEntries = await getTimeEntriesForRange(userId, orgId, today, today);
+  const recentRecords = await getTimeEntriesForRange(userId, orgId, past7Days, today);
+  
+  // Find active entry (entry without timeOut)
+  const activeEntry = todayEntries.find(entry => !entry.timeOut) || null;
+  const isClockedIn = activeEntry !== null;
+  
   return {
     activeEntry,
     todayEntries,
@@ -136,8 +136,8 @@ export default async function DashboardPage() {
       
       <RecentActivity records={recentRecords.map(r => ({
         date: r.date,
-        timeIn: r.timeIn ? new Date(r.timeIn).toLocaleTimeString('en-GB', { hour12: false }) : undefined,
-        timeOut: r.timeOut ? new Date(r.timeOut).toLocaleTimeString('en-GB', { hour12: false }) : undefined,
+        timeIn: r.timeIn ? formatTime(r.timeIn) : undefined,
+        timeOut: r.timeOut ? formatTime(r.timeOut) : undefined,
         message: r.note || undefined
       }))} />
     </div>

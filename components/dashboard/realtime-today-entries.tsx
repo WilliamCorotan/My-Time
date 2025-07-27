@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MessageSquare, Play, Square, RefreshCw } from 'lucide-react';
+import { Clock, MessageSquare } from 'lucide-react';
 import { formatDuration } from '@/lib/time-entries-format';
+import { formatTime } from '@/lib/time-format';
 import { useRealtimeData } from '@/lib/hooks/use-realtime-data';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
@@ -53,13 +54,6 @@ export function RealtimeTodayEntries({
     }
   );
 
-  const formatTime = (time: string) => {
-    return new Date(time).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
-
   const getSessionDuration = (entry: TimeEntryWithDuration) => {
     if (entry.duration) {
       return formatDuration(entry.duration);
@@ -73,19 +67,19 @@ export function RealtimeTodayEntries({
     return '0:00';
   };
 
+  const getStatusBadge = (entry: TimeEntryWithDuration) => {
+    if (!entry.timeIn) return <Badge variant="secondary">No Entry</Badge>;
+    if (!entry.timeOut) return <Badge variant="default">In Progress</Badge>;
+    return <Badge variant="default">Complete</Badge>;
+  };
+
   if (data.todayEntries.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Today&apos;s Sessions
-            </div>
-            <RefreshCw 
-              className={`h-4 w-4 cursor-pointer ${loading ? 'animate-spin' : ''}`}
-              onClick={refresh}
-            />
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Today&apos;s Sessions
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -100,53 +94,24 @@ export function RealtimeTodayEntries({
   }
 
   return (
-    <Card style={{ maxHeight: '500px', height: '100%' }}>
+    <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Today&apos;s Sessions ({data.todayEntries.length})
-          </div>
-          <RefreshCw 
-            className={`h-4 w-4 cursor-pointer transition-transform ${loading ? 'animate-spin' : 'hover:rotate-180'}`}
-            onClick={refresh}
-          />
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Today&apos;s Sessions
         </CardTitle>
       </CardHeader>
-      <CardContent style={{ overflowY: 'auto', maxHeight: '400px' }}>
-        <div className="space-y-3">
+      <CardContent>
+        <div className="space-y-4">
           {data.todayEntries.map((entry, index) => (
-            <div
-              key={entry.id}
-              className={`p-4 rounded-lg border transition-colors ${
-                entry.isActive 
-                  ? 'bg-primary/10 border-primary/20 shadow-sm' 
-                  : 'bg-muted/50 border-border'
-              }`}
-            >
+            <div key={entry.id} className="p-4 bg-muted/50 rounded-lg border border-border">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Session {index + 1}
-                  </span>
-                  <Badge variant={entry.isActive ? 'default' : 'secondary'}>
-                    {entry.isActive ? (
-                      <>
-                        <Play className="h-3 w-3 mr-1" />
-                        Active
-                      </>
-                    ) : (
-                      <>
-                        <Square className="h-3 w-3 mr-1" />
-                        Completed
-                      </>
-                    )}
-                  </Badge>
+                  <span className="font-medium text-foreground">Session {index + 1}</span>
+                  {getStatusBadge(entry)}
                 </div>
-                <div className="text-right">
-                  <div className={`font-medium ${entry.isActive ? 'text-primary animate-pulse' : 'text-primary'}`}>
-                    {getSessionDuration(entry)}
-                  </div>
+                <div className="font-medium text-primary">
+                  {getSessionDuration(entry)}
                 </div>
               </div>
 
@@ -159,7 +124,7 @@ export function RealtimeTodayEntries({
                   <span className="text-muted-foreground">Clock Out:</span>
                   <div className="font-medium text-foreground">
                     {entry.timeOut ? formatTime(entry.timeOut) : (
-                      <span className="text-primary animate-pulse">In Progress</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </div>
                 </div>

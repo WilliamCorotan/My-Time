@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Clock, Play, Square, MessageSquare } from 'lucide-react';
 import { formatDuration } from '@/lib/time-entries-format';
+import { formatTime, getCurrentTime, getCurrentDate } from '@/lib/time-format';
 
 type TimeEntry = {
   id: number;
@@ -34,13 +35,6 @@ export function TimeClockWidget({ activeEntry, todayEntries, isClockedIn, onTime
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  const formatTime = (time: string) => {
-    return new Date(time).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
 
   const calculateTodayHours = () => {
     let totalMinutes = 0;
@@ -107,15 +101,10 @@ export function TimeClockWidget({ activeEntry, todayEntries, isClockedIn, onTime
       <CardContent className="space-y-4">
         <div className="text-center">
           <div className="text-3xl font-mono font-bold text-foreground">
-            {currentTime.toLocaleTimeString()}
+            {getCurrentTime()}
           </div>
           <div className="text-sm text-muted-foreground">
-            {currentTime.toLocaleDateString([], { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
+            {getCurrentDate()}
           </div>
         </div>
 
@@ -151,63 +140,59 @@ export function TimeClockWidget({ activeEntry, todayEntries, isClockedIn, onTime
           </div>
         )}
 
-        {showNoteInput && (
-          <div className="space-y-3 p-4 bg-muted/50 rounded-lg border border-border">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        {!showNoteInput ? (
+          <div className="flex gap-2">
+            {!isClockedIn ? (
+              <Button 
+                onClick={onTimeIn} 
+                disabled={loading}
+                className="flex-1"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Clock In
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleClockOut} 
+                disabled={loading}
+                variant="destructive"
+                className="flex-1"
+              >
+                <Square className="h-4 w-4 mr-2" />
+                Clock Out
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MessageSquare className="h-4 w-4" />
-              Clock Out Note (Required)
+              <span>Add a note for this session:</span>
             </div>
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Please describe what you worked on during this session..."
+              placeholder="What did you work on?"
               className="min-h-[80px]"
-              disabled={loading}
+              autoFocus
             />
             <div className="flex gap-2">
-              <Button
-                onClick={handleClockOut}
+              <Button 
+                onClick={handleClockOut} 
                 disabled={loading || !note.trim()}
+                variant="destructive"
                 className="flex-1"
-                size="sm"
               >
-                <Square className="mr-2 h-3 w-3" />
-                Confirm Clock Out
+                <Square className="h-4 w-4 mr-2" />
+                Clock Out
               </Button>
-              <Button
-                onClick={handleCancelClockOut}
-                disabled={loading}
+              <Button 
+                onClick={handleCancelClockOut} 
                 variant="outline"
-                className="flex-1"
-                size="sm"
               >
                 Cancel
               </Button>
             </div>
-          </div>
-        )}
-        
-        {!showNoteInput && (
-          <div className="flex gap-2">
-            <Button
-              onClick={onTimeIn}
-              disabled={loading || isClockedIn}
-              className="flex-1"
-              size="lg"
-            >
-              <Play className="mr-2 h-4 w-4" />
-              Clock In
-            </Button>
-            <Button
-              onClick={handleClockOut}
-              disabled={loading || !isClockedIn}
-              variant="secondary"
-              className="flex-1"
-              size="lg"
-            >
-              <Square className="mr-2 h-4 w-4" />
-              Clock Out
-            </Button>
           </div>
         )}
       </CardContent>

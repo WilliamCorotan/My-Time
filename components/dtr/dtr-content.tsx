@@ -4,20 +4,9 @@ import { DTRClient } from '@/components/dtr/dtr-client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Calendar } from 'lucide-react';
+import { formatTime, formatDate } from '@/lib/time-format';
+import { formatDuration } from '@/lib/time-entries-format';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
-
-function formatTime(dateTimeString: string) {
-  return new Date(dateTimeString).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function formatDuration(totalMinutes: number) {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${hours}h ${minutes}m`;
-}
 
 function calculateTotalDuration(entries: TimeEntryWithDuration[]): number {
   return entries.reduce((sum: number, entry: TimeEntryWithDuration) => sum + (entry.duration || 0), 0);
@@ -54,9 +43,9 @@ export function DTRContent({
   initialTodayEntries, 
   initialIsClockedIn 
 }: DTRContentProps) {
-  const [activeEntry, setActiveEntry] = useState<TimeEntryWithDuration | null>(initialActiveEntry);
-  const [todayEntries, setTodayEntries] = useState<TimeEntryWithDuration[]>(initialTodayEntries);
-  const [isClockedIn, setIsClockedIn] = useState<boolean>(initialIsClockedIn);
+  const [activeEntry, setActiveEntry] = useState(initialActiveEntry);
+  const [todayEntries, setTodayEntries] = useState(initialTodayEntries);
+  const [isClockedIn, setIsClockedIn] = useState(initialIsClockedIn);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchDTRData = useCallback(async () => {
@@ -102,7 +91,7 @@ export function DTRContent({
                 Date
               </div>
               <div className="font-semibold text-foreground">
-                {new Date().toLocaleDateString([], {
+                {formatDate(new Date().toISOString(), {
                   weekday: 'short',
                   month: 'short',
                   day: 'numeric',

@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Calendar, BarChart3, Zap } from 'lucide-react';
-import { useTimeTrackingContext } from '@/lib/contexts/time-tracking-context';
+import { Clock, Calendar, BarChart3, TrendingUp } from 'lucide-react';
 import { formatDuration, calculateTotalDuration } from '@/lib/time-entries-format';
+import { useTimeTrackingContext } from '@/lib/contexts/time-tracking-context';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
 type LiveStatsCardsProps = {
-  recentRecords: TimeEntryWithDuration[]; // Recent records for week/month calculations
+  recentRecords: TimeEntryWithDuration[];
 };
 
 export function LiveStatsCards({ recentRecords }: LiveStatsCardsProps) {
@@ -77,31 +77,17 @@ export function LiveStatsCards({ recentRecords }: LiveStatsCardsProps) {
     return formatDuration(monthMinutes);
   };
 
-  const getTotalDays = () => {
-    const workingDays = new Set(recentRecords.filter(r => r.duration && r.duration > 0).map(r => r.date));
-    
-    // Add today if user has worked
-    if (data.todayEntries.length > 0) {
-      const today = new Date().toISOString().slice(0, 10);
-      workingDays.add(today);
-    }
-    
-    return workingDays.size;
-  };
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Today</CardTitle>
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className={`text-2xl font-bold ${data.isClockedIn ? 'text-primary animate-pulse' : ''}`}>
-            {calculateLiveTodayHours()}
-          </div>
+          <div className="text-2xl font-bold">{calculateLiveTodayHours()}</div>
           <p className="text-xs text-muted-foreground">
-            {data.isClockedIn ? 'Currently tracking' : 'Hours worked'}
+            {data.isClockedIn ? 'Live tracking' : 'Completed'}
           </p>
         </CardContent>
       </Card>
@@ -113,7 +99,9 @@ export function LiveStatsCards({ recentRecords }: LiveStatsCardsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{calculateWeekHours()}</div>
-          <p className="text-xs text-muted-foreground">Past 7 days</p>
+          <p className="text-xs text-muted-foreground">
+            Past 7 days
+          </p>
         </CardContent>
       </Card>
 
@@ -124,18 +112,22 @@ export function LiveStatsCards({ recentRecords }: LiveStatsCardsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{calculateMonthHours()}</div>
-          <p className="text-xs text-muted-foreground">Current month</p>
+          <p className="text-xs text-muted-foreground">
+            Current month
+          </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Days</CardTitle>
-          <Zap className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-sm font-medium">Sessions Today</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{getTotalDays()}</div>
-          <p className="text-xs text-muted-foreground">Days worked</p>
+          <div className="text-2xl font-bold">{data.todayEntries.length}</div>
+          <p className="text-xs text-muted-foreground">
+            {data.isClockedIn ? 'Including active' : 'Completed'}
+          </p>
         </CardContent>
       </Card>
     </div>

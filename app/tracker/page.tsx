@@ -1,178 +1,133 @@
 import { auth } from '@/lib/auth';
-import { currentUser } from '@clerk/nextjs/server';
-import { getUserOrganizations } from '@/lib/organizations';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrackerClient } from '@/components/tracker/tracker-client';
-import { BarChart3, Calendar, Clock, MessageSquare } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { getUserDisplayName } from '@/lib/user-utils';
-import { getTimeEntriesForRange } from '@/lib/time-entries';
+import { Clock, Calendar } from 'lucide-react';
 import { calculateTotalDuration, formatDuration } from '@/lib/time-entries-format';
+import { formatTime } from '@/lib/time-format';
+import { db } from '@/lib/db/config';
+import { timeEntries } from '@/lib/db/schema';
+import { eq, desc, and } from 'drizzle-orm';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
-function getPast7DaysDate(): string {
-  const date = new Date();
-  date.setDate(date.getDate() - 7);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getTodayDate(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function formatTime(dateTimeString: string) {
-  return new Date(dateTimeString).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
-}
-
 function getStatusBadge(entry: TimeEntryWithDuration) {
+  if (!entry.timeIn) return <Badge variant="secondary">No Entry</Badge>;
   if (!entry.timeOut) return <Badge variant="default">In Progress</Badge>;
-  return <Badge variant="secondary">Complete</Badge>;
-}
-
-function calculateStats(records: TimeEntryWithDuration[]) {
-  const totalMinutes = calculateTotalDuration(records.filter(r => r.duration !== undefined));
-  const totalHours = formatDuration(totalMinutes);
-  const completedDays = new Set(records.filter(r => r.duration !== undefined).map(r => r.date)).size;
-  const averageDaily = completedDays > 0 ? (totalMinutes / 60 / completedDays).toFixed(1) + 'h' : '0h';
-
-  return {
-    totalHours,
-    completedDays,
-    averageDaily
-  };
-}
-
-// Group entries by date for display
-function groupEntriesByDate(entries: TimeEntryWithDuration[]) {
-  const grouped = new Map<string, TimeEntryWithDuration[]>();
-  
-  entries.forEach(entry => {
-    if (!grouped.has(entry.date)) {
-      grouped.set(entry.date, []);
-    }
-    grouped.get(entry.date)!.push(entry);
-  });
-
-  // Convert to array and sort by date (newest first)
-  return Array.from(grouped.entries())
-    .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-    .map(([date, entries]) => ({
-      date,
-      entries: entries.sort((a, b) => new Date(a.timeIn).getTime() - new Date(b.timeIn).getTime()),
-      totalMinutes: calculateTotalDuration(entries)
-    }));
+  return <Badge variant="default">Complete</Badge>;
 }
 
 export default async function TrackerPage() {
-  const user = await currentUser();
   const { userId, orgId } = await auth();
-
-  if (!user || !userId) {
+  
+  if (!userId || !orgId) {
     redirect('/sign-in');
   }
 
-  // Get user organizations
-  const userOrgs = await getUserOrganizations(userId);
-  
-  // Redirect to welcome page if user has no organizations
-  if (userOrgs.length === 0) {
-    redirect('/welcome');
+  // Fetch all time entries for the user in the organization
+  const entries = await db
+    .select()
+    .from(timeEntries)
+    .where(and(eq(timeEntries.userId, userId), eq(timeEntries.orgId, orgId)))
+    .orderBy(desc(timeEntries.date), desc(timeEntries.timeIn));
+
+  // Transform entries to include duration and isActive
+  const records: TimeEntryWithDuration[] = entries.map((entry) => {
+    let duration: number | undefined;
+    let isActive = false;
+
+    if (entry.timeOut) {
+      const start = new Date(entry.timeIn).getTime();
+      const end = new Date(entry.timeOut).getTime();
+      duration = Math.max(0, Math.round((end - start) / 60000));
+    } else {
+      isActive = true;
+    }
+
+    return {
+      ...entry,
+      duration,
+      isActive
+    };
+  });
+
+  // Get user info for display
+  const userName = "User"; // You might want to fetch this from your user service
+
+  if (records.length === 0) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Time Tracker</h1>
+          <p className="text-muted-foreground">View and export your time tracking records</p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Time Records
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+              <p>No time records found</p>
+              <p className="text-sm">Start tracking your time to see records here</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
-  if (!orgId) {
-    redirect('/welcome');
-  }
+  // Group records by date
+  const groupedRecords = records.reduce((groups, record) => {
+    const date = record.date;
+    if (!groups[date]) {
+      groups[date] = [];
+    }
+    groups[date].push(record);
+    return groups;
+  }, {} as Record<string, TimeEntryWithDuration[]>);
 
-  // Fetch time entries for the past 7 days
-  const records = await getTimeEntriesForRange(userId, orgId, getPast7DaysDate(), getTodayDate());
-  
-  const stats = calculateStats(records);
-  const groupedRecords = groupEntriesByDate(records);
+  const sortedDates = Object.keys(groupedRecords).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Time Tracker</h1>
-          <p className="text-muted-foreground">View and analyze your time records over the past 7 days.</p>
-        </div>
-        <TrackerClient records={records} userName={getUserDisplayName(user)} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalHours}</div>
-            <p className="text-xs text-muted-foreground">Past 7 days</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Days Worked</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedDays}</div>
-            <p className="text-xs text-muted-foreground">Complete days</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Daily</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.averageDaily}</div>
-            <p className="text-xs text-muted-foreground">Hours per day</p>
-          </CardContent>
-        </Card>
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Time Tracker</h1>
+        <p className="text-muted-foreground">View and export your time tracking records</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Recent Time Records
+            Time Records
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {groupedRecords.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
-              <p>No time records found</p>
-              <p className="text-sm">Start tracking your time to see records here.</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {groupedRecords.map(({ date, entries, totalMinutes }) => (
-                <div key={date} className="border border-border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-lg text-foreground">
-                      {format(parseISO(date), 'EEEE, MMMM dd, yyyy')}
+          <div className="space-y-6">
+            {sortedDates.map(date => {
+              const entries = groupedRecords[date].sort((a, b) => new Date(a.timeIn).getTime() - new Date(b.timeIn).getTime());
+              const totalMinutes = calculateTotalDuration(entries);
+              
+              return (
+                <div key={date} className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {new Date(date).toLocaleDateString([], { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Total:</span>
-                      <span className="font-medium text-primary">
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">Total Hours</div>
+                      <div className="text-lg font-bold text-primary">
                         {formatDuration(totalMinutes)}
-                      </span>
+                      </div>
                     </div>
                   </div>
                   
@@ -197,7 +152,7 @@ export default async function TrackerPage() {
                           </div>
                           {entry.note && (
                             <div className="flex items-start gap-2 text-sm text-muted-foreground mt-2 p-2 bg-card rounded border-l-2 border-primary/20">
-                              <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                              <span className="text-xs">💬</span>
                               <span>{entry.note}</span>
                             </div>
                           )}
@@ -206,9 +161,9 @@ export default async function TrackerPage() {
                     ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
     </div>
