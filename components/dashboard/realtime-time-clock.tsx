@@ -7,29 +7,32 @@ import { Textarea } from '@/components/ui/textarea';
 import { Clock, Play, Square, MessageSquare } from 'lucide-react';
 import { formatDuration, calculateTotalDuration } from '@/lib/time-entries-format';
 import { formatTime, getCurrentTime, getCurrentDate } from '@/lib/time-format';
-import { useTimeTracking } from '@/lib/hooks/use-time-tracking';
+import { toast } from 'sonner';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
 type RealtimeTimeClockProps = {
   initialActiveEntry: TimeEntryWithDuration | null;
   initialTodayEntries: TimeEntryWithDuration[];
   initialIsClockedIn: boolean;
+  onTimeAction?: () => void;
 };
 
 export function RealtimeTimeClock({ 
   initialActiveEntry, 
   initialTodayEntries, 
-  initialIsClockedIn 
+  initialIsClockedIn,
+  onTimeAction
 }: RealtimeTimeClockProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [note, setNote] = useState('');
-  
-  const { data, loading, error, clockIn, clockOut, refresh } = useTimeTracking({
+  const [data, setData] = useState({
     activeEntry: initialActiveEntry,
     todayEntries: initialTodayEntries,
     isClockedIn: initialIsClockedIn
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Update current time every second
   useEffect(() => {
@@ -37,11 +40,28 @@ export function RealtimeTimeClock({
     return () => clearInterval(timer);
   }, []);
 
+  const fetchTimeData = async () => {
+    try {
+      const response = await fetch('/dtr/api', { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch time tracking data');
+      }
+      const newData = await response.json();
+      setData(newData);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+    }
+  };
+
+  // Determine if clocked in based on active entry in database
+  const isClockedIn = !!data.activeEntry && !data.activeEntry.timeOut;
+
   const calculateLiveTodayHours = () => {
     let totalMinutes = calculateTotalDuration(data.todayEntries);
     
     // Add current session time if clocked in
-    if (data.activeEntry && data.isClockedIn) {
+    if (data.activeEntry && isClockedIn) {
       const now = currentTime.getTime();
       const start = new Date(data.activeEntry.timeIn).getTime();
       totalMinutes += Math.round((now - start) / (1000 * 60));
@@ -51,7 +71,7 @@ export function RealtimeTimeClock({
   };
   
   const calculateLiveCurrentSessionHours = () => {
-    if (!data.activeEntry || !data.isClockedIn) return "0:00";
+    if (!data.activeEntry || !isClockedIn) return "0:00";
     
     const now = currentTime.getTime();
     const start = new Date(data.activeEntry.timeIn).getTime();
@@ -61,15 +81,40 @@ export function RealtimeTimeClock({
   };
 
   const getStatus = () => {
-    if (!data.isClockedIn) return { text: "Not Clocked In", variant: "secondary" as const };
+    if (!isClockedIn) return { text: "Not Clocked In", variant: "secondary" as const };
     return { text: "Clocked In", variant: "default" as const };
   };
   
   const handleClockIn = async () => {
+    setLoading(true);
     try {
-      await clockIn();
+      const response = await fetch('/dtr/api', {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+
+      // Refresh only this component's data
+      await fetchTimeData();
+      toast.success("Successfully clocked in!", {
+        description: "Your time tracking session has started."
+      });
+      
+      // Notify parent to refresh other components
+      if (onTimeAction) {
+        onTimeAction();
+      }
     } catch (error) {
-      // Error handling is done in the hook
+      const errorMessage = error instanceof Error ? error.message : 'Failed to clock in';
+      toast.error("Failed to clock in", {
+        description: errorMessage
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,12 +128,39 @@ export function RealtimeTimeClock({
       return; // Note is required
     }
     
+    setLoading(true);
     try {
-      await clockOut(note.trim());
+      const response = await fetch('/dtr/api', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ note: note.trim() })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+
+      // Refresh only this component's data
+      await fetchTimeData();
       setNote('');
       setShowNoteInput(false);
+      toast.success("Successfully clocked out!", {
+        description: "Your time tracking session has ended."
+      });
+      
+      // Notify parent to refresh other components
+      if (onTimeAction) {
+        onTimeAction();
+      }
     } catch (error) {
-      // Error handling is done in the hook
+      const errorMessage = error instanceof Error ? error.message : 'Failed to clock out';
+      toast.error("Failed to clock out", {
+        description: errorMessage
+      });
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -100,7 +172,7 @@ export function RealtimeTimeClock({
   const status = getStatus();
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-lg transition-shadow h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
@@ -159,7 +231,7 @@ export function RealtimeTimeClock({
 
         {!showNoteInput ? (
           <div className="flex gap-2">
-            {!data.isClockedIn ? (
+            {!isClockedIn ? (
               <Button 
                 onClick={handleClockIn} 
                 disabled={loading}

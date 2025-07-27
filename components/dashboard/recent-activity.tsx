@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatTimeOnly } from '@/lib/time-format';
+import { formatDuration } from '@/lib/time-entries-format';
 
 interface RecentActivityProps {
   records: Array<{
@@ -11,21 +12,11 @@ interface RecentActivityProps {
     timeIn?: string;
     timeOut?: string;
     message?: string;
+    duration?: number; // Duration in minutes
   }>;
 }
 
 export function RecentActivity({ records }: RecentActivityProps) {
-  const calculateHours = (timeIn?: string, timeOut?: string) => {
-    if (!timeIn || !timeOut) return null;
-    
-    const start = new Date(`2000-01-01T${timeIn}`);
-    const end = new Date(`2000-01-01T${timeOut}`);
-    const diff = end.getTime() - start.getTime();
-    const hours = diff / (1000 * 60 * 60);
-    
-    return hours.toFixed(1);
-  };
-
   const getStatusBadge = (timeIn?: string, timeOut?: string) => {
     if (!timeIn) return <Badge variant="secondary">No Entry</Badge>;
     if (!timeOut) return <Badge variant="default">In Progress</Badge>;
@@ -61,9 +52,9 @@ export function RecentActivity({ records }: RecentActivityProps) {
                       <Clock className="h-3 w-3" />
                       {record.timeIn ? formatTimeOnly(record.timeIn) : '-'} - {record.timeOut ? formatTimeOnly(record.timeOut) : '-'}
                     </span>
-                    {calculateHours(record.timeIn, record.timeOut) && (
+                    {record.duration && record.duration > 0 && (
                       <span className="font-medium text-primary">
-                        {calculateHours(record.timeIn, record.timeOut)}h
+                        {formatDuration(record.duration)}
                       </span>
                     )}
                   </div>

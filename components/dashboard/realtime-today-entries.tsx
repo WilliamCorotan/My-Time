@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, MessageSquare } from 'lucide-react';
 import { formatDuration } from '@/lib/time-entries-format';
 import { formatTime } from '@/lib/time-format';
-import { useRealtimeData } from '@/lib/hooks/use-realtime-data';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
 type TodayEntriesData = {
@@ -18,19 +17,31 @@ type RealtimeTodayEntriesProps = {
   initialEntries: TimeEntryWithDuration[];
   initialActiveEntry: TimeEntryWithDuration | null;
   initialIsClockedIn: boolean;
+  onRefresh?: () => void;
 };
 
 export function RealtimeTodayEntries({ 
   initialEntries, 
   initialActiveEntry, 
-  initialIsClockedIn 
+  initialIsClockedIn,
+  onRefresh
 }: RealtimeTodayEntriesProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [data, setData] = useState<TodayEntriesData>({
+    todayEntries: initialEntries,
+    activeEntry: initialActiveEntry,
+    isClockedIn: initialIsClockedIn
+  });
 
   // Update current time every second for live duration calculation
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Refresh data when component is re-mounted (key changes)
+  useEffect(() => {
+    refresh();
   }, []);
 
   const fetchTodayData = async (): Promise<TodayEntriesData> => {
@@ -41,18 +52,18 @@ export function RealtimeTodayEntries({
     return response.json();
   };
 
-  const { data, loading, refresh } = useRealtimeData(
-    fetchTodayData,
-    {
-      todayEntries: initialEntries,
-      activeEntry: initialActiveEntry,
-      isClockedIn: initialIsClockedIn
-    },
-    {
-      interval: 30000, // Update every 30 seconds
-      enabled: true
+  const refresh = async () => {
+    try {
+      const newData = await fetchTodayData();
+      setData(newData);
+      // Notify parent component that data was refreshed
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Failed to refresh today entries:', error);
     }
-  );
+  };
 
   const getSessionDuration = (entry: TimeEntryWithDuration) => {
     if (entry.duration) {
@@ -75,7 +86,7 @@ export function RealtimeTodayEntries({
 
   if (data.todayEntries.length === 0) {
     return (
-      <Card>
+      <Card className="h-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
@@ -94,15 +105,15 @@ export function RealtimeTodayEntries({
   }
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
           Today&apos;s Sessions
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="h-full">
+        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
           {data.todayEntries.map((entry, index) => (
             <div key={entry.id} className="p-4 bg-muted/50 rounded-lg border border-border">
               <div className="flex items-center justify-between mb-3">
@@ -136,7 +147,7 @@ export function RealtimeTodayEntries({
                     <MessageSquare className="h-3 w-3" />
                     <span>Note:</span>
                   </div>
-                  <div className="text-foreground bg-card p-2 rounded border-l-2 border-primary/20">
+                  <div className="text-foreground bg-background/50 p-2 rounded border">
                     {entry.note}
                   </div>
                 </div>

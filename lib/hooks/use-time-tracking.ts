@@ -2,7 +2,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
-import { useRealtimeData } from './use-realtime-data';
 
 type TimeTrackingData = {
   activeEntry: TimeEntryWithDuration | null;
@@ -11,7 +10,9 @@ type TimeTrackingData = {
 };
 
 export function useTimeTracking(initialData: TimeTrackingData) {
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<TimeTrackingData>(initialData);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchTimeData = useCallback(async (): Promise<TimeTrackingData> => {
     const response = await fetch('/dtr/api', { credentials: 'include' });
@@ -21,19 +22,18 @@ export function useTimeTracking(initialData: TimeTrackingData) {
     return response.json();
   }, []);
 
-  const {
-    data,
-    loading: realtimeLoading,
-    error,
-    refresh
-  } = useRealtimeData(fetchTimeData, initialData, {
-    interval: 30000, // Update every 30 seconds
-    enabled: true,
-    immediate: false
-  });
+  const refresh = useCallback(async () => {
+    try {
+      const newData = await fetchTimeData();
+      setData(newData);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+    }
+  }, [fetchTimeData]);
 
   const clockIn = useCallback(async () => {
-    setLoading(true);
+    setActionLoading(true);
     try {
       const response = await fetch('/dtr/api', {
         method: 'POST',
@@ -45,6 +45,7 @@ export function useTimeTracking(initialData: TimeTrackingData) {
         throw new Error(errorText);
       }
 
+      // Immediately refresh data after clock in
       await refresh();
       toast.success("Successfully clocked in!", {
         description: "Your time tracking session has started."
@@ -56,7 +57,7 @@ export function useTimeTracking(initialData: TimeTrackingData) {
       });
       throw error;
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   }, [refresh]);
 
@@ -68,7 +69,7 @@ export function useTimeTracking(initialData: TimeTrackingData) {
       throw new Error('Note is required');
     }
 
-    setLoading(true);
+    setActionLoading(true);
     try {
       const response = await fetch('/dtr/api', {
         method: 'PATCH',
@@ -82,6 +83,7 @@ export function useTimeTracking(initialData: TimeTrackingData) {
         throw new Error(errorText);
       }
 
+      // Immediately refresh data after clock out
       await refresh();
       toast.success("Successfully clocked out!", {
         description: "Your time tracking session has ended."
@@ -93,13 +95,13 @@ export function useTimeTracking(initialData: TimeTrackingData) {
       });
       throw error;
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   }, [refresh]);
 
   return {
     data,
-    loading: loading || realtimeLoading,
+    loading: actionLoading,
     error,
     clockIn,
     clockOut,

@@ -136,8 +136,9 @@ export default async function DashboardPage() {
       
       <RecentActivity records={recentRecords.map(r => ({
         date: r.date,
-        timeIn: r.timeIn ? formatTime(r.timeIn) : undefined,
-        timeOut: r.timeOut ? formatTime(r.timeOut) : undefined,
+        timeIn: r.timeIn,
+        timeOut: r.timeOut || undefined,
+        duration: r.duration,
         message: r.note || undefined
       }))} />
     </div>
