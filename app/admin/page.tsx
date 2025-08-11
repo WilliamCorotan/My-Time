@@ -7,9 +7,10 @@ import { Users, Settings, BarChart3 } from 'lucide-react';
 import { formatDuration } from '@/lib/time-entries-format';
 import { formatTime } from '@/lib/time-format';
 import { db } from '@/lib/db/config';
-import { timeEntries } from '@/lib/db/schema';
+import { timeEntries, userOrganizations } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { OrganizationManagement } from '@/components/admin/organization-management';
+import { DtrExport } from '@/components/admin/dtr-export';
 import { clerkClient } from '@clerk/nextjs/server';
 import { getUserDisplayName } from '@/lib/user-utils';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
@@ -66,6 +67,14 @@ export default async function AdminPage() {
   const users = await clerk.users.getUserList({ userId: userIds });
   const userMap = new Map(users.data.map((user: User) => [user.id, user]));
 
+  // Fetch organization members and their roles
+  const orgMembers = await db
+    .select()
+    .from(userOrganizations)
+    .where(eq(userOrganizations.orgId, orgId));
+
+  const memberRoleMap = new Map(orgMembers.map(member => [member.userId, member.role]));
+
   // Group records by user and date
   const groupedByUser = records.reduce((groups, record) => {
     const user = userMap.get(record.userId);
@@ -120,28 +129,25 @@ export default async function AdminPage() {
       <Tabs defaultValue="organization" className="space-y-6">
         <TabsList>
           <TabsTrigger value="organization">Organization</TabsTrigger>
-          <TabsTrigger value="members">Team Members</TabsTrigger>
           <TabsTrigger value="time-records">Time Records</TabsTrigger>
+          <TabsTrigger value="export-dtr">Export DTR</TabsTrigger>
         </TabsList>
 
         <TabsContent value="organization" className="space-y-6">
           <OrganizationManagement />
         </TabsContent>
 
-        <TabsContent value="members" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Team Members
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Team member management is available in the Organization tab.
-              </p>
-            </CardContent>
-          </Card>
+        <TabsContent value="export-dtr" className="space-y-6">
+          <DtrExport orgId={orgId} members={Object.values(groupedByUser).map(user => {
+            const userData = userMap.get(user.userId);
+            const role = memberRoleMap.get(user.userId) || 'member';
+            return {
+              userId: user.userId,
+              name: user.userName,
+              email: userData?.emailAddresses?.[0]?.emailAddress || user.userName,
+              role: role
+            };
+          })} />
         </TabsContent>
 
         <TabsContent value="time-records" className="space-y-6">
