@@ -8,6 +8,7 @@ import { Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { formatTimeOnly } from '@/lib/time-format';
+import { OrganizationSwitcher } from '@/components/ui/organization-switcher';
 
 type CalendarRecord = {
   date: string;
