@@ -7,9 +7,8 @@ import { RecentActivity } from '@/components/dashboard/recent-activity';
 import { OrganizationSwitcher } from '@/components/ui/organization-switcher';
 import { getUserOrganizations } from '@/lib/organizations';
 import { getUserDisplayName } from '@/lib/user-utils';
-import { getTimeEntriesForRange } from '@/lib/time-entries';
+import { getActiveTimeEntry, getTimeEntriesForRange, isUserClockedIn } from '@/lib/time-entries';
 import { calculateTotalDuration, formatDuration } from '@/lib/time-entries-format';
-import { formatTime } from '@/lib/time-format';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
 async function getDashboardData(userId: string, orgId: string) {
@@ -21,8 +20,8 @@ async function getDashboardData(userId: string, orgId: string) {
   const recentRecords = await getTimeEntriesForRange(userId, orgId, past7Days, today);
   
   // Find active entry (entry without timeOut)
-  const activeEntry = todayEntries.find(entry => !entry.timeOut) || null;
-  const isClockedIn = activeEntry !== null;
+  const activeEntry = await getActiveTimeEntry(userId, orgId);
+  const isClockedIn = await isUserClockedIn(userId, orgId);
   
   return {
     activeEntry,
