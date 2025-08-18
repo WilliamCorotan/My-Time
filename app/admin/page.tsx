@@ -13,6 +13,7 @@ import { OrganizationManagement } from '@/components/admin/organization-manageme
 import { DtrExport } from '@/components/admin/dtr-export';
 import { clerkClient } from '@clerk/nextjs/server';
 import { getUserDisplayName } from '@/lib/user-utils';
+import { OrganizationSwitcher } from '@/components/ui/organization-switcher';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 import type { User } from '@clerk/nextjs/server';
 
@@ -121,9 +122,12 @@ export default async function AdminPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Manage your organization and view team time records</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Manage your organization and view team time records</p>
+        </div>
+        <OrganizationSwitcher variant="compact" />
       </div>
 
       <Tabs defaultValue="organization" className="space-y-6">

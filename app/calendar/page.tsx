@@ -1,6 +1,6 @@
 "use client";
 import { useUser } from '@clerk/nextjs';
-import { useOrganization } from '@/lib/hooks/use-organization';
+import { useOrganizationContext } from '@/lib/contexts/organization-context';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +30,7 @@ type CalendarRecord = {
 
 export default function CalendarPage() {
   const { user } = useUser();
-  const { organization } = useOrganization();
+  const { currentOrganization: organization } = useOrganizationContext();
   const orgId = organization?.id;
   const [records, setRecords] = useState<CalendarRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -103,9 +103,12 @@ export default function CalendarPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Calendar View</h1>
-        <p className="text-muted-foreground">View your time records in a calendar format.</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Calendar View</h1>
+          <p className="text-muted-foreground">View your time records in a calendar format.</p>
+        </div>
+        <OrganizationSwitcher variant="compact" />
       </div>
 
       <Card>

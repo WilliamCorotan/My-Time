@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { useOrganization } from '@/lib/hooks/use-organization';
+import { useOrganizationContext } from '@/lib/contexts/organization-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +9,13 @@ import { ChevronDown, Building2, Plus, Check } from 'lucide-react';
 
 export function OrganizationSelector() {
   const { 
-    organization, 
+    currentOrganization: organization, 
     organizations, 
     switchOrganization, 
     createOrganization,
-    loading 
-  } = useOrganization();
+    loading,
+    switching
+  } = useOrganizationContext();
   
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -36,9 +37,8 @@ export function OrganizationSelector() {
 
   const handleSwitchOrganization = (orgId: string) => {
     switchOrganization(orgId);
-    // Set cookie for server-side persistence
-    document.cookie = `selected-org-id=${orgId}; path=/; max-age=${60 * 60 * 24 * 30}`; // 30 days
     setIsOpen(false);
+    // The page will refresh automatically, so we don't need to do anything else
   };
 
   if (loading) {
@@ -57,14 +57,15 @@ export function OrganizationSelector() {
         variant="ghost"
         className="w-full justify-between p-2 h-auto text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         onClick={() => setIsOpen(!isOpen)}
+        disabled={switching}
       >
         <div className="flex items-center gap-2 min-w-0">
           <Building2 className="h-4 w-4 flex-shrink-0" />
           <div className="text-left min-w-0">
             <div className="font-medium truncate">
-              {organization?.name || 'Select Organization'}
+              {switching ? 'Switching...' : (organization?.name || 'Select Organization')}
             </div>
-            {organization && (
+            {organization && !switching && (
               <div className="text-xs text-sidebar-foreground/60">
                 <Badge variant={organization.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
                   {organization.role}
@@ -73,7 +74,11 @@ export function OrganizationSelector() {
             )}
           </div>
         </div>
-        <ChevronDown className="h-4 w-4 flex-shrink-0" />
+        {switching ? (
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-sidebar-foreground"></div>
+        ) : (
+          <ChevronDown className="h-4 w-4 flex-shrink-0" />
+        )}
       </Button>
 
       {isOpen && (
@@ -87,6 +92,7 @@ export function OrganizationSelector() {
                     variant="ghost"
                     className="w-full justify-start p-2 h-auto hover:bg-accent hover:text-accent-foreground"
                     onClick={() => handleSwitchOrganization(org.id)}
+                    disabled={switching}
                   >
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
@@ -113,6 +119,7 @@ export function OrganizationSelector() {
                     variant="ghost"
                     className="w-full justify-start p-2 h-auto hover:bg-accent hover:text-accent-foreground"
                     onClick={() => setShowCreateForm(true)}
+                    disabled={switching}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create Organization
@@ -125,9 +132,10 @@ export function OrganizationSelector() {
                       onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
                       className="text-sm"
                       required
+                      disabled={switching}
                     />
                     <div className="flex gap-1">
-                      <Button type="submit" size="sm" className="flex-1">
+                      <Button type="submit" size="sm" className="flex-1" disabled={switching}>
                         Create
                       </Button>
                       <Button 
@@ -138,6 +146,7 @@ export function OrganizationSelector() {
                           setShowCreateForm(false);
                           setCreateForm({ name: '', description: '' });
                         }}
+                        disabled={switching}
                       >
                         Cancel
                       </Button>

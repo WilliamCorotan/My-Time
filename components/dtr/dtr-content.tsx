@@ -4,6 +4,7 @@ import { DTRClient } from '@/components/dtr/dtr-client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Calendar } from 'lucide-react';
+import { OrganizationSwitcher } from '@/components/ui/organization-switcher';
 import { formatTime, formatDate } from '@/lib/time-format';
 import { formatDuration } from '@/lib/time-entries-format';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
@@ -68,9 +69,12 @@ export function DTRContent({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Time Clock</h1>
-        <p className="text-muted-foreground">Track your daily work hours and manage your time records.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Time Clock</h1>
+          <p className="text-muted-foreground">Track your daily work hours and manage your time records.</p>
+        </div>
+        <OrganizationSwitcher variant="compact" />
       </div>
 
       <Card className="hover:shadow-lg transition-shadow">

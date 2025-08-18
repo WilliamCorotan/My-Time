@@ -1,6 +1,6 @@
 "use client";
 import { useUser } from '@clerk/nextjs';
-import { useOrganization } from '@/lib/hooks/use-organization';
+import { useOrganizationContext } from '@/lib/contexts/organization-context';
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { getClientUserDisplayName } from '@/lib/user-utils';
 
 export default function WelcomePage() {
   const { user } = useUser();
-  const { createOrganization, loading } = useOrganization();
+  const { createOrganization, loading } = useOrganizationContext();
   const router = useRouter();
   
   const [createForm, setCreateForm] = useState({ name: '', description: '' });

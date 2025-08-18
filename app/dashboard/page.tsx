@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { StatsCards } from '@/components/dashboard/stats-cards';
 import { DashboardClient } from '@/components/dashboard/dashboard-client';
 import { RecentActivity } from '@/components/dashboard/recent-activity';
+import { OrganizationSwitcher } from '@/components/ui/organization-switcher';
 import { getUserOrganizations } from '@/lib/organizations';
 import { getUserDisplayName } from '@/lib/user-utils';
 import { getTimeEntriesForRange } from '@/lib/time-entries';
@@ -117,13 +118,16 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">
-          Welcome back, {getUserDisplayName(user)}!
-        </h1>
-        <p className="text-muted-foreground">
-          Here&apos;s your time tracking overview for today.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Welcome back, {getUserDisplayName(user)}!
+          </h1>
+          <p className="text-muted-foreground">
+            Here&apos;s your time tracking overview for today.
+          </p>
+        </div>
+        <OrganizationSwitcher variant="compact" />
       </div>
 
       <StatsCards stats={stats} />

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Calendar } from 'lucide-react';
+import { OrganizationSwitcher } from '@/components/ui/organization-switcher';
 import { calculateTotalDuration, formatDuration } from '@/lib/time-entries-format';
 import { formatTime } from '@/lib/time-format';
 import { db } from '@/lib/db/config';
@@ -56,10 +57,13 @@ export default async function TrackerPage() {
   if (records.length === 0) {
     return (
       <div className="max-w-6xl mx-auto p-6">
-        <div className="mb-6">
+              <div className="mb-6 flex items-center justify-between">
+        <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Time Tracker</h1>
           <p className="text-muted-foreground">View and export your time tracking records</p>
         </div>
+        <OrganizationSwitcher variant="compact" />
+      </div>
 
         <Card>
           <CardHeader>
@@ -94,9 +98,12 @@ export default async function TrackerPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Time Tracker</h1>
-        <p className="text-muted-foreground">View and export your time tracking records</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Time Tracker</h1>
+          <p className="text-muted-foreground">View and export your time tracking records</p>
+        </div>
+        <OrganizationSwitcher variant="compact" />
       </div>
 
       <Card>
