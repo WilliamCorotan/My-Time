@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser, UserButton } from '@clerk/nextjs';
-import { useOrganization } from '@/lib/hooks/use-organization';
+import { useOrganizationContext } from '@/lib/contexts/organization-context';
 import { 
   Clock, 
   BarChart3, 
@@ -21,13 +21,14 @@ import { getClientUserDisplayName, getClientUserEmail } from '@/lib/user-utils';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 import { User } from '@clerk/nextjs/server';
 import { Organization } from '@clerk/nextjs/server';
+import Image from 'next/image';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Time Clock', href: '/dtr', icon: Clock },
   { name: 'Time Tracker', href: '/tracker', icon: BarChart3 },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
-  { name: 'Themes', href: '/themes', icon: Sparkles },
+  { name: 'Themes', href: '/themes', icon: Sparkles, adminOnly: true },
   { name: 'Admin Panel', href: '/admin', icon: Users, adminOnly: true },
 ];
 
@@ -35,7 +36,8 @@ export function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { user } = useUser();
-  const { organization, membership } = useOrganization();
+  const { currentOrganization: organization } = useOrganizationContext();
+  const membership = organization ? { role: organization.role } : null;
   const isAdmin = membership?.role === 'admin';
 
   const filteredNavigation = navigation.filter(item => 
@@ -115,7 +117,6 @@ function SidebarContent({ navigation, pathname, user, organization, onClose }: {
           </div>
           <div>
             <h1 className="text-lg font-semibold text-sidebar-foreground">DTR System</h1>
-            <p className="text-xs text-sidebar-foreground/60">{organization?.name || 'No Organization'}</p>
           </div>
         </div>
         {onClose && (

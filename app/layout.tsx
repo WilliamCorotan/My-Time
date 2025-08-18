@@ -6,6 +6,7 @@ import { ConditionalLayout } from '@/components/layout/conditional-layout';
 import { Toaster } from '@/components/ui/sonner';
 import ProgressBar from '@/components/ui/progress-bar';
 import { ThemeProvider } from '@/lib/contexts/theme-context';
+import { OrganizationProvider } from '@/lib/contexts/organization-context';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,11 +35,13 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <ThemeProvider>
-            <ProgressBar />
-            <ConditionalLayout>
-              {children}
-            </ConditionalLayout>
-            <Toaster />
+            <OrganizationProvider>
+              <ProgressBar />
+              <ConditionalLayout>
+                {children}
+              </ConditionalLayout>
+              <Toaster />
+            </OrganizationProvider>
           </ThemeProvider>
         </body>
       </html>

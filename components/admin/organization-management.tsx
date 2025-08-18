@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useOrganization } from '@/lib/hooks/use-organization';
+import { useOrganizationContext } from '@/lib/contexts/organization-context';
 import { Users, Plus, Settings, UserMinus, Shield, UserCheck, Loader2, Mail, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,7 +19,8 @@ type Member = {
 };
 
 export function OrganizationManagement() {
-  const { organization, membership } = useOrganization();
+  const { currentOrganization: organization, organizations, refreshOrganizations } = useOrganizationContext();
+  const membership = organization ? { role: organization.role } : null;
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
