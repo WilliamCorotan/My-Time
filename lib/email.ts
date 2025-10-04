@@ -15,7 +15,7 @@ export async function sendInvitationEmail({
 }) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'DTR <noreply@dtr.mphserp.com>', // Update this with your verified domain
+      from: 'DTR <noreply@dtr.allgo.cloud>', // Update this with your verified domain
       to: [to],
       subject: `You've been invited to join ${organizationName}`,
       html: `
