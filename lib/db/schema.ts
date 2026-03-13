@@ -46,6 +46,28 @@ export const timeEntries = sqliteTable('time_entries', {
   index('time_entries_active_idx').on(table.userId, table.orgId, table.timeOut),
 ]));
 
+// Time change requests with audit trail
+export const timeChangeRequests = sqliteTable('time_change_requests', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  timeEntryId: integer('time_entry_id').notNull(),
+  userId: text('user_id').notNull(),
+  orgId: text('org_id').notNull(),
+  requestedTimeIn: text('requested_time_in'),
+  requestedTimeOut: text('requested_time_out'),
+  requestedNote: text('requested_note'),
+  reason: text('reason').notNull(),
+  status: text('status').notNull().default('pending'), // 'pending' | 'approved' | 'rejected'
+  reviewedBy: text('reviewed_by'),
+  reviewedAt: text('reviewed_at'),
+  reviewNote: text('review_note'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => ([
+  index('tcr_user_org_idx').on(table.userId, table.orgId),
+  index('tcr_status_idx').on(table.orgId, table.status),
+  index('tcr_entry_idx').on(table.timeEntryId),
+]));
+
 // API tokens table for CLI authentication
 export const apiTokens = sqliteTable('api_tokens', {
   id: integer('id').primaryKey({ autoIncrement: true }),

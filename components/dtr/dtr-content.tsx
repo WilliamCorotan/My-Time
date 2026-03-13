@@ -3,10 +3,13 @@ import { useState, useCallback } from "react";
 import { DTRClient } from '@/components/dtr/dtr-client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Calendar } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Clock, Calendar, FileEdit } from 'lucide-react';
 import { OrganizationSwitcher } from '@/components/ui/organization-switcher';
 import { formatTime, formatDate } from '@/lib/time-format';
 import { formatDuration } from '@/lib/time-entries-format';
+import { TimeChangeRequestForm } from '@/components/dtr/time-change-request-form';
+import { TimeChangeRequestList } from '@/components/dtr/time-change-request-list';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
 function calculateTotalDuration(entries: TimeEntryWithDuration[]): number {
@@ -39,15 +42,17 @@ type DTRContentProps = {
   initialIsClockedIn: boolean;
 };
 
-export function DTRContent({ 
-  initialActiveEntry, 
-  initialTodayEntries, 
-  initialIsClockedIn 
+export function DTRContent({
+  initialActiveEntry,
+  initialTodayEntries,
+  initialIsClockedIn
 }: DTRContentProps) {
   const [activeEntry, setActiveEntry] = useState(initialActiveEntry);
   const [todayEntries, setTodayEntries] = useState(initialTodayEntries);
   const [isClockedIn, setIsClockedIn] = useState(initialIsClockedIn);
   const [loading, setLoading] = useState<boolean>(false);
+  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
+  const [requestRefreshKey, setRequestRefreshKey] = useState(0);
 
   const fetchDTRData = useCallback(async () => {
     setLoading(true);
@@ -143,29 +148,53 @@ export function DTRContent({
           <CardContent>
             <div className="space-y-3">
               {todayEntries.map((entry, index) => (
-                <div key={entry.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border">
-                  <div>
-                    <div className="font-medium text-foreground">Session {index + 1}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatTime(entry.timeIn)} - {entry.timeOut ? formatTime(entry.timeOut) : 'In Progress'}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium text-primary">
-                      {entry.isActive ? 'Active' : formatDuration(entry.duration || 0)}
-                    </div>
-                    {entry.note && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Note: {entry.note}
+                <div key={entry.id} className="space-y-2">
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border">
+                    <div>
+                      <div className="font-medium text-foreground">Session {index + 1}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatTime(entry.timeIn)} - {entry.timeOut ? formatTime(entry.timeOut) : 'In Progress'}
                       </div>
-                    )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <div className="font-medium text-primary">
+                          {entry.isActive ? 'Active' : formatDuration(entry.duration || 0)}
+                        </div>
+                        {entry.note && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Note: {entry.note}
+                          </div>
+                        )}
+                      </div>
+                      {entry.timeOut && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => setEditingEntryId(editingEntryId === entry.id ? null : entry.id)}
+                          title="Request time change"
+                        >
+                          <FileEdit className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
+                  {editingEntryId === entry.id && (
+                    <TimeChangeRequestForm
+                      entry={entry}
+                      onClose={() => setEditingEntryId(null)}
+                      onSubmitted={() => setRequestRefreshKey((k) => k + 1)}
+                    />
+                  )}
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
       )}
+
+      <TimeChangeRequestList refreshKey={requestRefreshKey} />
     </div>
   );
-} 
+}

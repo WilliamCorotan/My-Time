@@ -3,14 +3,15 @@ import { redirect } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Settings, BarChart3 } from 'lucide-react';
+import { Users, Settings, BarChart3, FileEdit } from 'lucide-react';
 import { formatDuration } from '@/lib/time-entries-format';
 import { formatTime } from '@/lib/time-format';
 import { db } from '@/lib/db/config';
-import { timeEntries, userOrganizations } from '@/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { timeEntries, userOrganizations, timeChangeRequests } from '@/lib/db/schema';
+import { eq, desc, and } from 'drizzle-orm';
 import { OrganizationManagement } from '@/components/admin/organization-management';
 import { DtrExport } from '@/components/admin/dtr-export';
+import { AdminTimeChangeRequests } from '@/components/admin/time-change-requests';
 import { clerkClient } from '@clerk/nextjs/server';
 import { getUserDisplayName } from '@/lib/user-utils';
 import { OrganizationSwitcher } from '@/components/ui/organization-switcher';
@@ -77,6 +78,19 @@ export default async function AdminPage() {
 
   const memberRoleMap = new Map(orgMembers.map(member => [member.userId, member.role]));
 
+  // Count pending change requests
+  const pendingChangeRequests = await db
+    .select()
+    .from(timeChangeRequests)
+    .where(and(eq(timeChangeRequests.orgId, orgId), eq(timeChangeRequests.status, 'pending')));
+  const pendingCount = pendingChangeRequests.length;
+
+  // Build user name map for change requests component
+  const userNameMap: Record<string, string> = {};
+  for (const [uid, user] of userMap.entries()) {
+    userNameMap[uid] = getUserDisplayName(user);
+  }
+
   // Group records by user and date
   const groupedByUser = records.reduce((groups, record) => {
     const user = userMap.get(record.userId);
@@ -135,11 +149,23 @@ export default async function AdminPage() {
         <TabsList>
           <TabsTrigger value="organization">Organization</TabsTrigger>
           <TabsTrigger value="time-records">Time Records</TabsTrigger>
+          <TabsTrigger value="change-requests" className="flex items-center gap-1">
+            Change Requests
+            {pendingCount > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-[20px] px-1 text-xs">
+                {pendingCount}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="export-dtr">Export DTR</TabsTrigger>
         </TabsList>
 
         <TabsContent value="organization" className="space-y-6">
           <OrganizationManagement />
+        </TabsContent>
+
+        <TabsContent value="change-requests" className="space-y-6">
+          <AdminTimeChangeRequests userMap={userNameMap} />
         </TabsContent>
 
         <TabsContent value="export-dtr" className="space-y-6">

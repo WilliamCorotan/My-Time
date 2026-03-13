@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FileDown, Loader2, ChevronDown, Users, User } from 'lucide-react';
+import { FileDown, Loader2, ChevronDown, Users, User, FileText, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -42,6 +42,7 @@ export function DtrExport({ orgId, members }: DtrExportProps) {
   const [exporting, setExporting] = useState(false);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [exportType, setExportType] = useState<'team' | 'individual'>('team');
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'csv'>('pdf');
 
   const handleExport = async () => {
     if (!startDate || !endDate) {
@@ -78,7 +79,9 @@ export function DtrExport({ orgId, members }: DtrExportProps) {
       }
 
       const data = await response.json();
-      if (exportType === 'individual') {
+      if (exportFormat === 'csv') {
+        generateCSV(data, startDate, endDate, exportType === 'individual' ? selectedMember! : undefined);
+      } else if (exportType === 'individual') {
         generateIndividualPDF(data, startDate, endDate, selectedMember!);
       } else {
         generateTeamPDF(data, startDate, endDate);
@@ -90,6 +93,51 @@ export function DtrExport({ orgId, members }: DtrExportProps) {
     } finally {
       setExporting(false);
     }
+  };
+
+  const escapeCSV = (value: string): string => {
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+
+  const generateCSV = (data: Record<string, TimeEntry[]>, startDate: string, endDate: string, filterUserId?: string) => {
+    const rows: string[] = ['Name,Email,Date,Time In,Time Out,Duration,Note'];
+
+    const userIds = filterUserId ? [filterUserId] : Object.keys(data);
+    for (const userId of userIds) {
+      const entries = data[userId] || [];
+      const member = members.find(m => m.userId === userId);
+      if (!member) continue;
+
+      for (const entry of entries) {
+        const duration = entry.duration
+          ? `${Math.floor(entry.duration / 60)}h ${entry.duration % 60}m`
+          : '';
+        rows.push([
+          escapeCSV(member.name),
+          escapeCSV(member.email),
+          escapeCSV(formatDate(entry.date)),
+          escapeCSV(formatTime(entry.timeIn, { hour: '2-digit', minute: '2-digit' })),
+          entry.timeOut ? escapeCSV(formatTime(entry.timeOut, { hour: '2-digit', minute: '2-digit' })) : 'Active',
+          duration,
+          escapeCSV(entry.note || ''),
+        ].join(','));
+      }
+    }
+
+    const csv = rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const prefix = filterUserId
+      ? (members.find(m => m.userId === filterUserId)?.name || 'member').replace(/\s+/g, '-').toLowerCase()
+      : 'team';
+    a.href = url;
+    a.download = `${prefix}-dtr-${startDate}-to-${endDate}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const generateTeamPDF = (data: Record<string, TimeEntry[]>, startDate: string, endDate: string) => {
@@ -369,6 +417,31 @@ export function DtrExport({ orgId, members }: DtrExportProps) {
             </div>
           )}
 
+          {/* Export Format */}
+          <div className="space-y-2">
+            <Label>Format</Label>
+            <div className="flex gap-2">
+              <Button
+                variant={exportFormat === 'pdf' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setExportFormat('pdf')}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                PDF
+              </Button>
+              <Button
+                variant={exportFormat === 'csv' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setExportFormat('csv')}
+                className="flex items-center gap-2"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                CSV
+              </Button>
+            </div>
+          </div>
+
           {/* Date Range Selection */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -406,7 +479,7 @@ export function DtrExport({ orgId, members }: DtrExportProps) {
             ) : (
               <>
                 <FileDown className="mr-2 h-4 w-4" />
-                {exportType === 'team' ? 'Export Team DTR to PDF' : 'Export Individual DTR to PDF'}
+                Export {exportType === 'team' ? 'Team' : 'Individual'} DTR to {exportFormat.toUpperCase()}
               </>
             )}
           </Button>

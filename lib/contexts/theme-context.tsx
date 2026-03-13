@@ -14,15 +14,19 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-function getStoredTheme(): Theme {
-  if (typeof window === 'undefined') return 'light';
-  const saved = localStorage.getItem('theme') as Theme;
-  return saved && ALL_THEMES.includes(saved) ? saved : 'light';
-}
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Initialize with stored theme to avoid mismatch (blocking script already applied it)
-  const [theme, setThemeState] = useState<Theme>(getStoredTheme);
+  // Always initialize as 'light' to match server render.
+  // The blocking <script> in <head> already applies the real theme class to <html>,
+  // so there's no visual flash. We sync React state on mount below.
+  const [theme, setThemeState] = useState<Theme>('light');
+
+  // Sync state from localStorage on mount (client only)
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') as Theme;
+    if (saved && ALL_THEMES.includes(saved)) {
+      setThemeState(saved);
+    }
+  }, []);
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
@@ -31,7 +35,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.add(newTheme);
   }, []);
 
-  // Sync class on mount (in case state and DOM are out of sync)
+  // Keep DOM class in sync with state
   useEffect(() => {
     document.documentElement.classList.remove(...ALL_THEMES);
     document.documentElement.classList.add(theme);
@@ -50,4 +54,4 @@ export function useTheme() {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
-} 
+}

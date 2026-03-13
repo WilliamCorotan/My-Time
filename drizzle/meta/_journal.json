@@ -36,6 +36,13 @@
       "when": 1773401793157,
       "tag": "0004_outgoing_pandemic",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1773404443780,
+      "tag": "0005_spicy_black_panther",
+      "breakpoints": true
     }
   ]
 }
