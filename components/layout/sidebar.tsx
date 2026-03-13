@@ -13,6 +13,7 @@ import {
   X,
   Calendar,
   Sparkles,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ const navigation = [
   { name: "Time Clock", href: "/dtr", icon: Clock },
   { name: "Time Tracker", href: "/tracker", icon: BarChart3 },
   { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "API Tokens", href: "/tokens", icon: KeyRound },
   { name: "Themes", href: "/themes", icon: Sparkles, adminOnly: true },
   { name: "Admin Panel", href: "/admin", icon: Users, adminOnly: true },
 ];

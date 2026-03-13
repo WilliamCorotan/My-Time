@@ -1,11 +1,11 @@
 "use client";
-import { useUser } from '@clerk/nextjs';
 import { useOrganizationContext } from '@/lib/contexts/organization-context';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { formatTimeOnly } from '@/lib/time-format';
 import { OrganizationSwitcher } from '@/components/ui/organization-switcher';
@@ -30,8 +30,7 @@ type CalendarRecord = {
 };
 
 export default function CalendarPage() {
-  const { user } = useUser();
-  const { currentOrganization: organization } = useOrganizationContext();
+  const { currentOrganization: organization, loading: orgLoading } = useOrganizationContext();
   const orgId = organization?.id;
   const [records, setRecords] = useState<CalendarRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,7 +58,7 @@ export default function CalendarPage() {
     };
 
     fetchRecords();
-  }, [user, orgId, currentDate]);
+  }, [orgId, currentDate]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -81,13 +80,37 @@ export default function CalendarPage() {
     setCurrentDate(direction === 'prev' ? subMonths(currentDate, 1) : addMonths(currentDate, 1));
   };
 
-  if (loading) {
+  if (orgLoading || loading) {
     return (
       <div className="max-w-6xl mx-auto p-6">
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading calendar...</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-8 w-32 rounded-md" />
         </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-6 w-40" />
+              <div className="flex gap-2">
+                <Skeleton className="h-8 w-8 rounded-md" />
+                <Skeleton className="h-8 w-8 rounded-md" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-7 gap-2">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Skeleton key={`header-${i}`} className="h-8 rounded" />
+              ))}
+              {Array.from({ length: 35 }).map((_, i) => (
+                <Skeleton key={`cell-${i}`} className="min-h-[100px] rounded-lg" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -148,6 +171,11 @@ export default function CalendarPage() {
               </div>
             ))}
             
+            {/* Empty cells for days before the 1st of the month */}
+            {Array.from({ length: monthStart.getDay() }, (_, i) => (
+              <div key={`empty-${i}`} className="min-h-[100px]" />
+            ))}
+
             {/* Calendar days */}
             {calendarDays.map(day => {
               const isCurrentMonth = isSameMonth(day, currentDate);
