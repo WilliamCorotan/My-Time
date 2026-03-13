@@ -29,6 +29,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Start and end dates are required' }, { status: 400 });
     }
 
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(startDate) || !dateRegex.test(endDate) ||
+        isNaN(new Date(startDate).getTime()) || isNaN(new Date(endDate).getTime())) {
+      return NextResponse.json({ error: 'Invalid date format. Use YYYY-MM-DD.' }, { status: 400 });
+    }
+
     // Fetch time entries for the organization within the date range
     // If specificUserId is provided, filter by that user only
     const whereConditions = [

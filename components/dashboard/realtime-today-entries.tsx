@@ -39,9 +39,12 @@ export function RealtimeTodayEntries({
     return () => clearInterval(timer);
   }, []);
 
-  // Refresh data when component is re-mounted (key changes)
+  // Refresh data when component is re-mounted with no initial data
   useEffect(() => {
-    refresh();
+    if (!initialEntries || initialEntries.length === 0) {
+      refresh();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTodayData = async (): Promise<TodayEntriesData> => {

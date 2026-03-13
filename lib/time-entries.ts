@@ -5,7 +5,7 @@ import { timeEntries } from '@/lib/db/schema';
 import { getTodayDate, getDateFromDateTime, getCurrentDateTime, getYesterdayDate } from './time-entries-date';
 import { calculateDuration, calculateTotalDuration, formatDuration } from './time-entries-format';
 import { TimeEntry, TimeEntryWithDuration } from './time-entries-types';
-import { eq, and, desc, isNull } from 'drizzle-orm';
+import { eq, and, desc, isNull, sql } from 'drizzle-orm';
 
 // Clock in - create a new time entry
 export async function clockIn(userId: string, orgId: string): Promise<TimeEntry> {
@@ -115,8 +115,6 @@ export async function getTimeEntriesForRange(
   startDate: string, 
   endDate: string
 ): Promise<TimeEntryWithDuration[]> {
-  const { sql } = await import('drizzle-orm');
-  
   const entries = await db
     .select()
     .from(timeEntries)

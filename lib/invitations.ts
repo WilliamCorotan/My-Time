@@ -1,6 +1,6 @@
 import { db } from '@/lib/db/config';
 import { invitations } from '@/lib/db/schema';
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, gt, lt } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 export type Invitation = {
@@ -62,7 +62,7 @@ export async function getPendingInvitations(orgId: string): Promise<Invitation[]
       and(
         eq(invitations.orgId, orgId),
         eq(invitations.status, 'pending'),
-        lt(invitations.expiresAt, new Date().toISOString())
+        gt(invitations.expiresAt, new Date().toISOString())
       )
     );
   

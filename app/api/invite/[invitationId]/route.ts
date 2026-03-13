@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { getInvitation, acceptInvitation, expireInvitation } from '@/lib/invitations';
 import { addUserToOrganization } from '@/lib/organizations';
 
@@ -35,6 +35,20 @@ export async function POST(
       // Mark as expired
       await expireInvitation(invitationId);
       return NextResponse.json({ error: 'Invitation has expired' }, { status: 400 });
+    }
+
+    // Verify the authenticated user's email matches the invitation email
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(userId);
+    const primaryEmail = clerkUser.emailAddresses.find(
+      (e) => e.id === clerkUser.primaryEmailAddressId
+    )?.emailAddress;
+
+    if (!primaryEmail || primaryEmail.toLowerCase() !== invitation.email.toLowerCase()) {
+      return NextResponse.json(
+        { error: 'This invitation was sent to a different email address' },
+        { status: 403 }
+      );
     }
 
     // Add user to organization

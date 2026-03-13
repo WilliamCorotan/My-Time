@@ -1,10 +1,15 @@
+import { cache } from 'react';
 import { auth as clerkAuth } from '@clerk/nextjs/server';
 import { getUserOrganizations } from '@/lib/organizations';
 import { cookies } from 'next/headers';
 
+const getCachedUserOrgs = cache(async (userId: string) => {
+  return getUserOrganizations(userId);
+});
+
 export async function auth() {
   const { userId } = await clerkAuth();
-  
+
   if (!userId) {
     return { userId: null, orgId: null, orgRole: null };
   }
@@ -12,8 +17,8 @@ export async function auth() {
   // Get selected organization from cookie or use default
   const cookieStore = await cookies();
   const selectedOrgId = cookieStore.get('selected-org-id')?.value;
-  
-  const userOrgs = await getUserOrganizations(userId);
+
+  const userOrgs = await getCachedUserOrgs(userId);
   
   let currentOrg;
   if (selectedOrgId) {

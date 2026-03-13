@@ -1,0 +1,31 @@
+{
+  "name": "dtr-cli",
+  "version": "1.0.0",
+  "description": "Daily Time Record CLI - Track your time from the command line",
+  "main": "dist/index.js",
+  "bin": {
+    "dtr": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "time-tracking",
+    "dtr",
+    "cli",
+    "timesheet"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "typescript": "^5.7.3"
+  },
+  "files": [
+    "dist"
+  ]
+}

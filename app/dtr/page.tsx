@@ -3,20 +3,14 @@ import { currentUser } from '@clerk/nextjs/server';
 import { getUserOrganizations } from '@/lib/organizations';
 import { redirect } from 'next/navigation';
 import { DTRContent } from '@/components/dtr/dtr-content';
-import { 
-  getActiveTimeEntry, 
-  getTodayTimeEntries, 
-  isUserClockedIn,
-} from '@/lib/time-entries';
+import { getTodayTimeEntries } from '@/lib/time-entries';
 
-import type { TimeEntryWithDuration} from '@/lib/time-entries-types'
+import type { TimeEntryWithDuration } from '@/lib/time-entries-types'
 
 async function getDTRData(userId: string, orgId: string) {
-  const [activeEntry, todayEntries, isClockedIn] = await Promise.all([
-    getActiveTimeEntry(userId, orgId),
-    getTodayTimeEntries(userId, orgId),
-    isUserClockedIn(userId, orgId)
-  ]);
+  const todayEntries = await getTodayTimeEntries(userId, orgId);
+  const activeEntry = todayEntries.find(e => !e.timeOut) ?? null;
+  const isClockedIn = activeEntry !== null;
 
   return {
     activeEntry,

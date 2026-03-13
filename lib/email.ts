@@ -2,6 +2,15 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export async function sendInvitationEmail({
   to,
   organizationName,
@@ -23,8 +32,8 @@ export async function sendInvitationEmail({
           <h2 style="color: #333; margin-bottom: 20px;">You've been invited!</h2>
           
           <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-            <strong>${inviterName}</strong> has invited you to join the organization 
-            <strong>${organizationName}</strong> on DTR (Daily Time Record).
+            <strong>${escapeHtml(inviterName)}</strong> has invited you to join the organization
+            <strong>${escapeHtml(organizationName)}</strong> on DTR (Daily Time Record).
           </p>
           
           <p style="color: #666; line-height: 1.6; margin-bottom: 30px;">

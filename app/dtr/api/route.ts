@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { 
-  clockIn, 
-  clockOut, 
-  getActiveTimeEntry, 
+import {
+  clockIn,
+  clockOut,
+  getActiveTimeEntry,
   getTodayTimeEntries,
-  isUserClockedIn 
 } from '@/lib/time-entries';
 
 export async function GET() {
@@ -13,10 +12,10 @@ export async function GET() {
   if (!userId || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   
   try {
-    const activeEntry = await getActiveTimeEntry(userId, orgId);
     const todayEntries = await getTodayTimeEntries(userId, orgId);
-    const isClockedIn = await isUserClockedIn(userId, orgId);
-    
+    const activeEntry = todayEntries.find(e => !e.timeOut) ?? null;
+    const isClockedIn = activeEntry !== null;
+
     return NextResponse.json({
       activeEntry,
       todayEntries,
@@ -34,7 +33,8 @@ export async function POST() {
   
   try {
     // Check if user is already clocked in
-    const isClockedIn = await isUserClockedIn(userId, orgId);
+    const active = await getActiveTimeEntry(userId, orgId);
+    const isClockedIn = active !== null;
     if (isClockedIn) {
       return NextResponse.json({ error: 'You are already clocked in. Please clock out first.' }, { status: 400 });
     }
@@ -64,8 +64,8 @@ export async function PATCH(req: NextRequest) {
     }
     
     // Check if user is clocked in
-    const isClockedIn = await isUserClockedIn(userId, orgId);
-    if (!isClockedIn) {
+    const activeForClockOut = await getActiveTimeEntry(userId, orgId);
+    if (!activeForClockOut) {
       return NextResponse.json({ error: 'You are not clocked in. Please clock in first.' }, { status: 400 });
     }
     

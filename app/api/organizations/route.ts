@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { 
-  getUserOrganizations, 
-  createOrganization, 
-  addUserToOrganization 
+import {
+  getUserOrganizations,
+  createOrganization,
 } from '@/lib/organizations';
 
 export async function GET() {
@@ -38,16 +37,6 @@ export async function POST(req: NextRequest) {
 
       const organization = await createOrganization(name, description, userId);
       return NextResponse.json(organization);
-    }
-
-    if (action === 'join') {
-      const { orgId } = body;
-      if (!orgId) {
-        return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
-      }
-
-      await addUserToOrganization(userId, orgId);
-      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

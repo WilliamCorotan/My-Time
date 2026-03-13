@@ -53,6 +53,11 @@ export async function DELETE(
         return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
       }
 
+      const memberCheck = await getUserOrganization(targetUserId, orgId);
+      if (!memberCheck) {
+        return NextResponse.json({ error: 'Target user is not a member of this organization' }, { status: 404 });
+      }
+
       await removeUserFromOrganization(targetUserId, orgId);
       return NextResponse.json({ success: true });
     }
@@ -90,6 +95,11 @@ export async function PATCH(
 
     if (!['admin', 'member'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
+    const targetMembership = await getUserOrganization(targetUserId, orgId);
+    if (!targetMembership) {
+      return NextResponse.json({ error: 'Target user is not a member of this organization' }, { status: 404 });
     }
 
     await updateUserRole(targetUserId, orgId, role);

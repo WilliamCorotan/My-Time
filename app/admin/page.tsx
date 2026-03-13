@@ -24,13 +24,14 @@ function getStatusBadge(entry: TimeEntryWithDuration) {
 }
 
 export default async function AdminPage() {
-  const { userId, orgId } = await auth();
-  
-  console.log('userId', userId);
-  console.log('orgId', orgId);
+  const { userId, orgId, orgRole } = await auth();
 
   if (!userId || !orgId) {
     redirect('/sign-in');
+  }
+
+  if (orgRole !== 'admin') {
+    redirect('/dashboard');
   }
 
   // Fetch all time entries for the organization

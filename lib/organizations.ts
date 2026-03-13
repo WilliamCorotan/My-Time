@@ -72,23 +72,27 @@ export async function createOrganization(name: string, description: string | und
   const now = new Date().toISOString();
   const orgId = nanoid();
 
-  const [org] = await db
-    .insert(organizations)
-    .values({
-      id: orgId,
-      name,
-      description,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .returning();
+  const org = await db.transaction(async (tx) => {
+    const [newOrg] = await tx
+      .insert(organizations)
+      .values({
+        id: orgId,
+        name,
+        description,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
 
-  // Add creator as admin
-  await db.insert(userOrganizations).values({
-    userId: creatorUserId,
-    orgId,
-    role: 'admin',
-    joinedAt: now,
+    // Add creator as admin
+    await tx.insert(userOrganizations).values({
+      userId: creatorUserId,
+      orgId,
+      role: 'admin',
+      joinedAt: now,
+    });
+
+    return newOrg;
   });
 
   return org;
