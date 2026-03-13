@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Clock, Play, Square, MessageSquare } from 'lucide-react';
 import { formatDuration } from '@/lib/time-entries-format';
-import { formatTime, getCurrentTime, getCurrentDate } from '@/lib/time-format';
+import { formatTime } from '@/lib/time-format';
 
 type TimeEntry = {
   id: number;
@@ -27,11 +27,14 @@ interface TimeClockWidgetProps {
 }
 
 export function TimeClockWidget({ activeEntry, todayEntries, isClockedIn, onTimeIn, onTimeOut, loading }: TimeClockWidgetProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [note, setNote] = useState('');
 
   useEffect(() => {
+    setMounted(true);
+    setCurrentTime(new Date());
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -99,12 +102,12 @@ export function TimeClockWidget({ activeEntry, todayEntries, isClockedIn, onTime
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-center">
-          <div className="text-3xl font-mono font-bold text-foreground">
-            {getCurrentTime()}
+        <div className="text-center" suppressHydrationWarning>
+          <div className="text-3xl font-mono font-bold text-foreground" suppressHydrationWarning>
+            {mounted && currentTime ? currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : '--:--:-- --'}
           </div>
-          <div className="text-sm text-muted-foreground">
-            {getCurrentDate()}
+          <div className="text-sm text-muted-foreground" suppressHydrationWarning>
+            {mounted && currentTime ? currentTime.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
           </div>
         </div>
 

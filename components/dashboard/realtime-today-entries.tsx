@@ -26,7 +26,7 @@ export function RealtimeTodayEntries({
   initialIsClockedIn,
   onRefresh
 }: RealtimeTodayEntriesProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [data, setData] = useState<TodayEntriesData>({
     todayEntries: initialEntries,
     activeEntry: initialActiveEntry,
@@ -35,6 +35,7 @@ export function RealtimeTodayEntries({
 
   // Update current time every second for live duration calculation
   useEffect(() => {
+    setCurrentTime(new Date());
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -71,7 +72,7 @@ export function RealtimeTodayEntries({
   const getSessionDuration = (entry: TimeEntryWithDuration) => {
     if (entry.duration) {
       return formatDuration(entry.duration);
-    } else if (entry.isActive && data.activeEntry?.id === entry.id) {
+    } else if (entry.isActive && data.activeEntry?.id === entry.id && currentTime) {
       // Show live duration for active session
       const now = currentTime.getTime();
       const start = new Date(entry.timeIn).getTime();

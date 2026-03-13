@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { DTRClient } from '@/components/dtr/dtr-client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -94,7 +94,7 @@ export function DTRContent({
                 <Calendar className="h-4 w-4" />
                 Date
               </div>
-              <div className="font-semibold text-foreground">
+              <div className="font-semibold text-foreground" suppressHydrationWarning>
                 {formatDate(new Date().toISOString(), {
                   weekday: 'short',
                   month: 'short',

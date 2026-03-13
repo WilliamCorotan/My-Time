@@ -1,8 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 export type Theme = 'light' | 'dark' | 'blue' | 'green' | 'purple' | 'orange' | 'rose';
+
+const ALL_THEMES: Theme[] = ['light', 'dark', 'blue', 'green', 'purple', 'orange', 'rose'];
 
 interface ThemeContextType {
   theme: Theme;
@@ -12,37 +14,31 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+function getStoredTheme(): Theme {
+  if (typeof window === 'undefined') return 'light';
+  const saved = localStorage.getItem('theme') as Theme;
+  return saved && ALL_THEMES.includes(saved) ? saved : 'light';
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
-  const themes: Theme[] = ['light', 'dark', 'blue', 'green', 'purple', 'orange', 'rose'];
+  // Initialize with stored theme to avoid mismatch (blocking script already applied it)
+  const [theme, setThemeState] = useState<Theme>(getStoredTheme);
 
-  useEffect(() => {
-    // Get theme from localStorage or default to 'light'
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme && themes.includes(savedTheme)) {
-      setThemeState(savedTheme);
-    }
-  }, []);
-
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
-    
-    // Remove all theme classes
-    document.documentElement.classList.remove('light', 'dark', 'blue', 'green', 'purple', 'orange', 'rose');
-    
-    // Add the new theme class
+    document.documentElement.classList.remove(...ALL_THEMES);
     document.documentElement.classList.add(newTheme);
-  };
+  }, []);
 
+  // Sync class on mount (in case state and DOM are out of sync)
   useEffect(() => {
-    // Apply theme class to document
-    document.documentElement.classList.remove('light', 'dark', 'blue', 'green', 'purple', 'orange', 'rose');
+    document.documentElement.classList.remove(...ALL_THEMES);
     document.documentElement.classList.add(theme);
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, themes }}>
+    <ThemeContext.Provider value={{ theme, setTheme, themes: ALL_THEMES }}>
       {children}
     </ThemeContext.Provider>
   );

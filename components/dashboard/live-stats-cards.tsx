@@ -11,11 +11,12 @@ type LiveStatsCardsProps = {
 };
 
 export function LiveStatsCards({ recentRecords }: LiveStatsCardsProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const { data } = useTimeTrackingContext();
 
   // Update current time every second for live calculations
   useEffect(() => {
+    setCurrentTime(new Date());
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -24,12 +25,12 @@ export function LiveStatsCards({ recentRecords }: LiveStatsCardsProps) {
     let totalMinutes = calculateTotalDuration(data.todayEntries);
     
     // Add current session time if clocked in
-    if (data.activeEntry && data.isClockedIn) {
+    if (data.activeEntry && data.isClockedIn && currentTime) {
       const now = currentTime.getTime();
       const start = new Date(data.activeEntry.timeIn).getTime();
       totalMinutes += Math.round((now - start) / (1000 * 60));
     }
-    
+
     return formatDuration(totalMinutes);
   };
 
@@ -44,14 +45,14 @@ export function LiveStatsCards({ recentRecords }: LiveStatsCardsProps) {
     const todayInRecords = weekRecords.some(r => r.date === today);
     if (!todayInRecords) {
       let todayMinutes = calculateTotalDuration(data.todayEntries);
-      if (data.activeEntry && data.isClockedIn) {
+      if (data.activeEntry && data.isClockedIn && currentTime) {
         const now = currentTime.getTime();
         const start = new Date(data.activeEntry.timeIn).getTime();
         todayMinutes += Math.round((now - start) / (1000 * 60));
       }
       weekMinutes += todayMinutes;
     }
-    
+
     return formatDuration(weekMinutes);
   };
 
@@ -60,20 +61,20 @@ export function LiveStatsCards({ recentRecords }: LiveStatsCardsProps) {
     thisMonth.setDate(1);
     const monthRecords = recentRecords.filter(r => new Date(r.date) >= thisMonth);
     let monthMinutes = calculateTotalDuration(monthRecords);
-    
+
     // Add today's time if it's not already in recent records
     const today = new Date().toISOString().slice(0, 10);
     const todayInRecords = monthRecords.some(r => r.date === today);
     if (!todayInRecords) {
       let todayMinutes = calculateTotalDuration(data.todayEntries);
-      if (data.activeEntry && data.isClockedIn) {
+      if (data.activeEntry && data.isClockedIn && currentTime) {
         const now = currentTime.getTime();
         const start = new Date(data.activeEntry.timeIn).getTime();
         todayMinutes += Math.round((now - start) / (1000 * 60));
       }
       monthMinutes += todayMinutes;
     }
-    
+
     return formatDuration(monthMinutes);
   };
 

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Clock, Play, Square, MessageSquare } from 'lucide-react';
 import { formatDuration, calculateTotalDuration } from '@/lib/time-entries-format';
-import { formatTime, getCurrentTime, getCurrentDate } from '@/lib/time-format';
+import { formatTime } from '@/lib/time-format';
 import { toast } from 'sonner';
 import type { TimeEntryWithDuration } from '@/lib/time-entries-types';
 
@@ -17,13 +17,15 @@ type RealtimeTimeClockProps = {
   onTimeAction?: () => void;
 };
 
-export function RealtimeTimeClock({ 
-  initialActiveEntry, 
-  initialTodayEntries, 
+export function RealtimeTimeClock({
+  initialActiveEntry,
+  initialTodayEntries,
   initialIsClockedIn,
   onTimeAction
 }: RealtimeTimeClockProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  // Use null initial to avoid server/client mismatch, then hydrate on mount
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [note, setNote] = useState('');
   const [data, setData] = useState({
@@ -34,8 +36,10 @@ export function RealtimeTimeClock({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Update current time every second
+  // Hydrate time on mount, then tick every second
   useEffect(() => {
+    setMounted(true);
+    setCurrentTime(new Date());
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -59,26 +63,34 @@ export function RealtimeTimeClock({
 
   const calculateLiveTodayHours = () => {
     let totalMinutes = calculateTotalDuration(data.todayEntries);
-    
+
     // Add current session time if clocked in
-    if (data.activeEntry && isClockedIn) {
+    if (data.activeEntry && isClockedIn && currentTime) {
       const now = currentTime.getTime();
       const start = new Date(data.activeEntry.timeIn).getTime();
       totalMinutes += Math.round((now - start) / (1000 * 60));
     }
-    
+
     return formatDuration(totalMinutes);
   };
-  
+
   const calculateLiveCurrentSessionHours = () => {
-    if (!data.activeEntry || !isClockedIn) return "0:00";
-    
+    if (!data.activeEntry || !isClockedIn || !currentTime) return "0:00";
+
     const now = currentTime.getTime();
     const start = new Date(data.activeEntry.timeIn).getTime();
     const minutes = Math.round((now - start) / (1000 * 60));
-    
+
     return formatDuration(minutes);
   };
+
+  const displayTime = mounted && currentTime
+    ? currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+    : '--:--:-- --';
+
+  const displayDate = mounted && currentTime
+    ? currentTime.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : '';
 
   const getStatus = () => {
     if (!isClockedIn) return { text: "Not Clocked In", variant: "secondary" as const };
@@ -186,12 +198,12 @@ export function RealtimeTimeClock({
           </div>
         )}
 
-        <div className="text-center">
-          <div className="text-3xl font-mono font-bold text-foreground">
-            {getCurrentTime()}
+        <div className="text-center" suppressHydrationWarning>
+          <div className="text-3xl font-mono font-bold text-foreground" suppressHydrationWarning>
+            {displayTime}
           </div>
-          <div className="text-sm text-muted-foreground">
-            {getCurrentDate()}
+          <div className="text-sm text-muted-foreground" suppressHydrationWarning>
+            {displayDate}
           </div>
         </div>
 
