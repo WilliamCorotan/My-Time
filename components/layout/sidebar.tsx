@@ -14,6 +14,7 @@ import {
   Calendar,
   Sparkles,
   KeyRound,
+  FileEdit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ import type { OrganizationWithRole } from "@/lib/organizations";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Time Clock", href: "/dtr", icon: Clock },
+  { name: "DTR Adjustments", href: "/dtr/adjustments", icon: FileEdit },
   { name: "Time Tracker", href: "/tracker", icon: BarChart3 },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "API Tokens", href: "/tokens", icon: KeyRound },
@@ -36,12 +38,12 @@ export function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { user } = useUser();
-  const { currentOrganization: organization } = useOrganizationContext();
-  const membership = organization ? { role: organization.role } : null;
-  const isAdmin = membership?.role === "admin";
+  const { currentOrganization: organization, loading: orgLoading } = useOrganizationContext();
+  const isAdmin = organization?.role === "admin";
 
+  // While loading org data, show all nav items to prevent flash of missing items
   const filteredNavigation = navigation.filter(
-    (item) => !item.adminOnly || isAdmin,
+    (item) => !item.adminOnly || isAdmin || orgLoading,
   );
 
   return (
@@ -148,7 +150,9 @@ function SidebarContent({
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navigation.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive = item.href === "/dtr"
+            ? pathname === "/dtr"
+            : pathname === item.href || pathname.startsWith(item.href + "/");
 
           return (
             <Link
